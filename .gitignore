@@ -2,6 +2,11 @@ node_modules
 package-lock.json
 .env
 
-
+# public/uploads/01-cart/*
+# public/uploads/02-forum/*
+# public/uploads/03-shop/*
+# public/uploads/04-product/*
+# public/uploads/05-member/*
+# public/uploads/06-event/*
 public/uploads/*/*
-public/images/*/*
+# public/images/*/*
