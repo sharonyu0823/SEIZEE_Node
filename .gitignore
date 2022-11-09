@@ -8,5 +8,5 @@ package-lock.json
 # public/uploads/04-product/*
 # public/uploads/05-member/*
 # public/uploads/06-event/*
-public/uploads/*/*
+# public/uploads/*/*
 # public/images/*/*
