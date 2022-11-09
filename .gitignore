@@ -3,4 +3,5 @@ package-lock.json
 .env
 
 public/uploads/01-cart/*
+public/uploads/05-member/*
 public/images/*
