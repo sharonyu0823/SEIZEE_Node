@@ -5,7 +5,6 @@ const app = express();
 // top-level middleware
 app.use(express.json());
 
-
 // routes
 // 01-cart
 
@@ -16,9 +15,9 @@ app.use(express.json());
 // 04-product
 
 // 05-member
+app.use("/user", require(__dirname + "/routes/user"));
 
 // 06-event
-
 
 // 環境設定
 
