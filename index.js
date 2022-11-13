@@ -1,8 +1,19 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+const cors = require("cors");
 
 // top-level middleware
+const corsOptions = {
+  credentials: true,
+  origin: function (origin, callback) {
+    console.log({ origin: origin });
+    callback(null, true);
+  },
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // routes
