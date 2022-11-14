@@ -18,9 +18,9 @@ router.post("/register", async (req, res) => {
   // console.log(req.body)
 
   const [result] = await db.query(sql, [
-    req.body.mbName,
-    req.body.mbEmail,
-    req.body.mbPass,
+    req.body.mbrName,
+    req.body.mbrEmail,
+    req.body.mbrPass,
   ]);
 
   if (result.affectedRows) output.success = true;
@@ -38,7 +38,7 @@ router.post("/checkUser", async (req, res) => {
 
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
 
-  const [result] = await db.query(sql, [req.body.mbEmail]);
+  const [result] = await db.query(sql, [req.body.mbrEmail]);
 
   // console.log(result)
   // console.log(!result)
@@ -65,7 +65,7 @@ router.post("/login", async (req, res) => {
 
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
 
-  const [result] = await db.query(sql, [req.body.mbEmail]);
+  const [result] = await db.query(sql, [req.body.mblEmail]);
   const row = result[0];
   //   console.log(result);
   // console.log(result.length)
@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
   }
 
   // 登入密碼的驗證
-  if (req.body.mbPass === row.mb_pass) {
+  if (req.body.mblPass === row.mb_pass) {
     output.success = true;
   } else {
     output.success = false;
@@ -102,7 +102,7 @@ router.post("/login", async (req, res) => {
   if (output.success) {
     // 更新登入時間
     const sql = "UPDATE `member` SET `last_login_at`=? WHERE mb_email = ?";
-    const [result] = await db.query(sql, [new Date(), req.body.mbEmail]);
+    const [result] = await db.query(sql, [new Date(), req.body.mblEmail]);
 
     // JWT
     const { mb_sid, mb_photo, mb_email } = row;
