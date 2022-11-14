@@ -136,8 +136,25 @@ router.post("/forgotPass", async (req, res) => {
     error: {},
   };
 
-  // 有沒有email 然後用後端發送email
+  // TODO: 有沒有email 然後用後端發送email
   // uuid
+
+  const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
+
+  const [result] = await db.query(sql, [req.body.mbfEmail]);
+
+  // console.log(result);
+  // console.log(!result);
+  // console.log(result.length);
+
+  if (result.length === 1) {
+    output.success = true;
+  } else {
+    output.success = false;
+    output.error = "帳號不存在";
+  }
+
+  res.json(output);
 });
 
 // ====================================
