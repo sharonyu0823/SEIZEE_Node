@@ -12,18 +12,27 @@ router.post("/register", async (req, res) => {
     error: {},
   };
 
-  const sql =
-    "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
+  // 這邊要把checkuser的錯誤try catch在這邊
+  const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
+  const [result] = await db.query(sql, [req.body.mbrEmail]);
 
-  // console.log(req.body)
+  try {
+    const sql =
+      "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
 
-  const [result] = await db.query(sql, [
-    req.body.mbrName,
-    req.body.mbrEmail,
-    req.body.mbrPass,
-  ]);
+    // console.log(req.body)
 
-  if (result.affectedRows) output.success = true;
+    const [result] = await db.query(sql, [
+      req.body.mbrName,
+      req.body.mbrEmail,
+      req.body.mbrPass,
+    ]);
+
+    if (result.affectedRows) output.success = true;
+  } catch {
+    output.success = false;
+    output.error = "帳號重覆";
+  }
 
   res.json(output);
 });
