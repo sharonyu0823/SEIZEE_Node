@@ -16,22 +16,27 @@ router.post("/register", async (req, res) => {
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
   const [result] = await db.query(sql, [req.body.mbrEmail]);
 
-  try {
-    const sql =
-      "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
-
-    // console.log(req.body)
-
-    const [result] = await db.query(sql, [
-      req.body.mbrName,
-      req.body.mbrEmail,
-      req.body.mbrPass,
-    ]);
-
-    if (result.affectedRows) output.success = true;
-  } catch {
+  if (result.length === 1) {
     output.success = false;
     output.error = "帳號重覆";
+  } else {
+    try {
+      const sql =
+        "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
+
+      // console.log(req.body)
+
+      const [result] = await db.query(sql, [
+        req.body.mbrName,
+        req.body.mbrEmail,
+        req.body.mbrPass,
+      ]);
+
+      if (result.affectedRows) output.success = true;
+    } catch {
+      output.success = false;
+      output.error = "帳號重覆";
+    }
   }
 
   res.json(output);
