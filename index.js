@@ -24,6 +24,7 @@ app.use(express.json());
 // 03-shop
 
 // 04-product
+app.use("/product_list", require(__dirname + "/routes/product"));
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
