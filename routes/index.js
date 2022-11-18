@@ -10,4 +10,5 @@ router.get('/', function(req, res, next) {
 /* product page. */
 app.use("/product_list", require(__dirname + "/routes/product"));
 
+
 module.exports = router;

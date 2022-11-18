@@ -3,10 +3,8 @@ const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 
 router.get('/', async (req, res) => {
-    // console.log("product_list")
     const shop_list_sid = req.query.shop_list_sid
     const category_sid = req.query.category_sid
-    // const member_sid = req.session.member_sid
     const member_sid = req.query.member_sid === undefined ? '0' : req.query.member_sid
 
     let collectionJoinCondition = ''
@@ -16,14 +14,14 @@ router.get('/', async (req, res) => {
     if (shop_list_sid !== undefined) {
         whereCondition = '`food_product`.`shop_list_sid` = ' + shop_list_sid
     }
-    // console.log(whereCondition);
     if (category_sid !== undefined) {
         if (whereCondition != '')
             whereCondition += ' and '  
         whereCondition += '`food_product`.`product_category_sid`= ' + category_sid
     }
+
     // console.log(whereCondition);
-    let p_sql = "SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, `product_name`, `product_category_sid`, `category_name`, `product_description`, `unit_price`, `sale_price`, `product_launch`, `inventory_qty`, `member_sid` " + 
+    let product_sql = "SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, `product_name`, `product_category_sid`, `category_name`, `product_description`, `unit_price`, `sale_price`, `product_launch`, `inventory_qty`, `member_sid` " + 
     "FROM `food_product` " +
     "LEFT JOIN `shop_list` on`shop_list`.sid = `shop_list_sid` " + 
     "LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " + 
@@ -31,8 +29,8 @@ router.get('/', async (req, res) => {
      collectionJoinCondition + 
      ' WHERE ' + whereCondition + 
      ' ORDER BY `product_category_sid`, `food_product`.`sid`'
-    
-    const [rows] = await db.query(p_sql)
+
+    const [rows] = await db.query(product_sql)
     res.json([rows])
 })
 
