@@ -17,12 +17,14 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // routes
+//00-home
+app.use("/api/seizee", require(__dirname + "/routes/home"));
 // 01-cart
 
 // 02-forum
 
 // 03-shop
-
+app.use("/api/shop", require(__dirname + "/routes/shop"));
 // 04-product
 app.use("/product_list", require(__dirname + "/routes/product"));
 
@@ -32,8 +34,11 @@ app.use("/user", require(__dirname + "/routes/user"));
 // 06-event
 
 // 環境設定
+app.use(express.static('public'));
 
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started");
 });
+
+module.exports = app;
