@@ -225,15 +225,14 @@ router.put("/profile/:sid", async (req, res) => {
   // TODO: 從JWT拿sid 網址sid拿掉
 
   const sql =
-    "UPDATE `member` SET `mb_photo`=?,`mb_nickname`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
+    "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
   const [result] = await db.query(sql, [
-    req.body.mbPhoto,
-    req.body.mbNickname,
-    req.body.mbGender,
-    req.body.mbAddressCity,
-    req.body.mbAddressArea,
-    req.body.mbAddressDetail,
-    req.body.mbPhone,
+    req.body.mbuPhoto,
+    req.body.mbuGender,
+    req.body.mbuAddressCity,
+    req.body.mbuAddressArea,
+    req.body.mbuAddressDetail,
+    req.body.mbuPhone,
     req.params.sid,
   ]);
 
