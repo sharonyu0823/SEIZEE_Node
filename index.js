@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+// const upload = require(__dirname + "/modules/upload-img");
 
 // top-level middleware
 const corsOptions = {

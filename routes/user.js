@@ -54,7 +54,7 @@ router.post("/checkUser", async (req, res) => {
 
   const [result] = await db.query(sql, [req.body.mbrEmail]);
 
-  // console.log(result)
+  console.log(result)
   // console.log(!result)
   // console.log(result.length)
 
@@ -129,7 +129,7 @@ router.post("/login", async (req, res) => {
       },
       process.env.JWT_SECRET
     );
-    console.log(row);
+    // console.log(row);
     // console.log(token);
     output.auth = {
       mb_sid,
@@ -197,17 +197,20 @@ router.get("/profile/:sid", async (req, res) => {
   const output = {
     success: false,
     error: {},
+    row: [],
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉
 
   const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
-  const [rows] = await db.query(sql, [req.params.sid]);
+  const [row] = await db.query(sql, [req.params.sid]);
 
-  if (rows.length === 1) {
+  if (row.length === 1) {
     output.success = true;
+    output.row = row[0];
   }
-  // console.log(rows);
+  console.log(row);
+  // console.log(row[0]);
   // console.log(!rows);
   // console.log(!rows.length);
 
