@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
+const upload = require(__dirname + "/../modules/upload_img");
 const jwt = require("jsonwebtoken");
 // const Joi= require('joi');
 
@@ -9,7 +10,7 @@ const jwt = require("jsonwebtoken");
 router.post("/register", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // 這邊要把checkuser的錯誤try catch在這邊
@@ -47,14 +48,14 @@ router.post("/register", async (req, res) => {
 router.post("/checkUser", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
 
   const [result] = await db.query(sql, [req.body.mbrEmail]);
 
-  console.log(result)
+  // console.log(result)
   // console.log(!result)
   // console.log(result.length)
 
@@ -73,7 +74,7 @@ router.post("/checkUser", async (req, res) => {
 router.post("/login", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
     auth: {},
   };
 
@@ -147,7 +148,7 @@ router.post("/login", async (req, res) => {
 router.post("/forgotPass", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 有沒有email 然後用後端發送email
@@ -176,7 +177,7 @@ router.post("/forgotPass", async (req, res) => {
 router.put("/updatePass", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 更換密碼適用uuid判斷
@@ -196,7 +197,7 @@ router.put("/updatePass", async (req, res) => {
 router.get("/profile/:sid", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
     row: [],
   };
 
@@ -210,8 +211,8 @@ router.get("/profile/:sid", async (req, res) => {
     output.row = row[0];
   }
   console.log(row);
-  // console.log(row[0]);
-  // console.log(!rows);
+  console.log(row[0]);
+  console.log(!row);
   // console.log(!rows.length);
 
   res.json(output);
@@ -219,10 +220,10 @@ router.get("/profile/:sid", async (req, res) => {
 
 // ====================================
 // 個人資料-編輯
-router.put("/profile/:sid", async (req, res) => {
+router.put("/profile/:sid", upload.single("avatar"), async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉
@@ -240,7 +241,7 @@ router.put("/profile/:sid", async (req, res) => {
   ]);
 
   if (result.changedRows) output.success = true;
-  console.log(result.changedRows);
+  // console.log(result.changedRows);
 
   res.json(output);
 });
@@ -250,7 +251,7 @@ router.put("/profile/:sid", async (req, res) => {
 router.delete("/deleteAccount/:sid", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉
