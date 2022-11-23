@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { v4: uuidv4 } = require("uuid");
+// const { v4: uuidv4 } = require("uuid");
 
 const extMap = {
   "image/jpeg": ".jpg",
@@ -17,8 +17,9 @@ const storage = multer.diskStorage({
     cb(null, __dirname + "/../public/uploads/05-member");
   },
   filename: (req, file, cb) => {
-    const ext = extMap[file.mimetype];
-    cb(null, uuidv4() + ext);
+    // console.log('aaa:', file)
+    // const ext = extMap[file.mimetype];
+    cb(null, file.originalname);
   },
 });
 

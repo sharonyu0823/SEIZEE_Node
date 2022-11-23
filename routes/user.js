@@ -17,27 +17,33 @@ router.post("/register", async (req, res) => {
   // 這邊要把checkuser的錯誤try catch在這邊
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
   const [result] = await db.query(sql, [req.body.mbrEmail]);
+  console.log("I am here");
 
   if (result.length === 1) {
+    console.log("result: ", result);
+    console.log("result.length: ", result.length);
     output.success = false;
     output.error = "帳號重覆";
   } else {
     try {
       const sql =
-        "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
+        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, NOW(), NOW(), 1)";
 
       // console.log(req.body)
 
       const [result] = await db.query(sql, [
+        "default.png",
         req.body.mbrName,
         req.body.mbrEmail,
         req.body.mbrPass,
       ]);
 
       if (result.affectedRows) output.success = true;
-    } catch {
+    } catch (e) {
       output.success = false;
-      output.error = "帳號重覆";
+      output.error = "發生錯誤";
+
+      console.log(e);
     }
   }
 
@@ -245,10 +251,6 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
 
     if (result.changedRows) {
       output.success = true;
-      await fs.rename(
-        req.file.path,
-        `public/uploads/05-member/${req.file.originalname}`
-      );
     } else {
       output.error = "沒有更新";
     }
@@ -264,6 +266,8 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
       req.body.mb_phone,
       req.params.sid,
     ]);
+
+    // console.log("gender:", req.body.mb_gender);
 
     if (result.changedRows) {
       output.success = true;
