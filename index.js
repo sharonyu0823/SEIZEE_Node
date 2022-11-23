@@ -1,9 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+const cors = require("cors");
 
 // top-level middleware
 app.use(express.json());
+
+app.use(cors())
 
 
 // routes
@@ -18,7 +21,7 @@ app.use(express.json());
 // 05-member
 
 // 06-event
-
+app.use("/event", require(__dirname + "/routes/event"));
 
 // 環境設定
 
@@ -26,3 +29,5 @@ const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started");
 });
+
+module.exports = app
