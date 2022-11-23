@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 const upload = require(__dirname + "/../modules/upload_img");
 const jwt = require("jsonwebtoken");
+const fs = require("fs").promises;
 // const Joi= require('joi');
 
 // ====================================
@@ -242,7 +243,15 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
       req.params.sid,
     ]);
 
-    if (result.changedRows) output.success = true;
+    if (result.changedRows) {
+      output.success = true;
+      await fs.rename(
+        req.file.path,
+        `public/uploads/05-member/${req.file.originalname}`
+      );
+    } else {
+      output.error = "沒有更新";
+    }
   } else {
     const sql1 =
       "UPDATE `member` SET `mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
@@ -256,7 +265,11 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
       req.params.sid,
     ]);
 
-    if (result.changedRows) output.success = true;
+    if (result.changedRows) {
+      output.success = true;
+    } else {
+      output.error = "沒有更新";
+    }
   }
 
   // console.log(result.changedRows);

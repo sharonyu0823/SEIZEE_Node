@@ -32,6 +32,7 @@ app.use("/user", require(__dirname + "/routes/user"));
 // 06-event
 
 // 環境設定
+app.use(express.static('public'));
 
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
