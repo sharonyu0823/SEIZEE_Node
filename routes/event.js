@@ -24,7 +24,7 @@ router.get('/event-test/vr', async(req, res, next)=>{
     res.json({test_rows});
 })
 router.get('/event-test/theater', async(req, res, next)=>{
-    const test_sql = "SELECT * FROM `event_all` WHERE `cate` = 5;";
+    const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 5;";
     const [test_rows] = await db.query(test_sql);
     res.json({test_rows});
 })
