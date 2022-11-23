@@ -220,7 +220,7 @@ router.get("/profile/:sid", async (req, res) => {
 
 // ====================================
 // 個人資料-編輯
-router.put("/profile/:sid", upload.single("avatar"), async (req, res) => {
+router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
   const output = {
     success: false,
     error: "",
@@ -228,20 +228,43 @@ router.put("/profile/:sid", upload.single("avatar"), async (req, res) => {
 
   // TODO: 從JWT拿sid 網址sid拿掉
 
-  const sql =
-    "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
-  const [result] = await db.query(sql, [
-    req.body.mbuPhoto,
-    req.body.mbuGender,
-    req.body.mbuAddressCity,
-    req.body.mbuAddressArea,
-    req.body.mbuAddressDetail,
-    req.body.mbuPhone,
-    req.params.sid,
-  ]);
+  if (!!req.file) {
+    const sql =
+      "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
 
-  if (result.changedRows) output.success = true;
+    const [result] = await db.query(sql, [
+      req.file.originalname,
+      req.body.mb_gender,
+      req.body.mb_address_city,
+      req.body.mb_address_area,
+      req.body.mb_address_detail,
+      req.body.mb_phone,
+      req.params.sid,
+    ]);
+
+    if (result.changedRows) output.success = true;
+  } else {
+    const sql1 =
+      "UPDATE `member` SET `mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
+
+    const [result] = await db.query(sql1, [
+      req.body.mb_gender,
+      req.body.mb_address_city,
+      req.body.mb_address_area,
+      req.body.mb_address_detail,
+      req.body.mb_phone,
+      req.params.sid,
+    ]);
+
+    if (result.changedRows) output.success = true;
+  }
+
   // console.log(result.changedRows);
+  // console.log(req.body.mbuPhoto);
+  // console.log(req.file.originalname);
+  // console.log(req.file);
+  // console.log(req.body.mb_gender);
+  // console.log(req.body.mb_phone);
 
   res.json(output);
 });
