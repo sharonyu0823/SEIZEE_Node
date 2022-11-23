@@ -18,6 +18,7 @@ app.use(express.json());
 
 // routes
 // 01-cart
+app.use('/cart',require(__dirname + '/routes/cart'));
 
 // 02-forum
 
@@ -35,5 +36,7 @@ app.use("/user", require(__dirname + "/routes/user"));
 
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
-  console.log("server started");
+  console.log("server started, server port: ", port);
 });
+
+module.exports = app
