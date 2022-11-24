@@ -27,7 +27,7 @@ router.post("/register", async (req, res) => {
   } else {
     try {
       const sql =
-        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, NOW(), NOW(), 1)";
+        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
 
       // console.log(req.body)
 
@@ -36,6 +36,11 @@ router.post("/register", async (req, res) => {
         req.body.mbrName,
         req.body.mbrEmail,
         req.body.mbrPass,
+        req.body.mbuGender,
+        req.body.mbuAddressCity,
+        req.body.mbuAddressArea,
+        req.body.mbuAddressDetail,
+        req.body.mbuPhone,
       ]);
 
       if (result.affectedRows) output.success = true;
@@ -238,6 +243,8 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
   if (!!req.file) {
     const sql =
       "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
+
+    console.log("gender:", req.body.mb_gender);
 
     const [result] = await db.query(sql, [
       req.file.originalname,
