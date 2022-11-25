@@ -1,10 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-
-// top-level middleware
-app.use(express.json());
-
+const db = require(__dirname + "/modules/db_connect");
+const cors = require("cors");
 
 // routes
 // 01-cart
@@ -14,6 +12,7 @@ app.use(express.json());
 // 03-shop
 
 // 04-product
+app.use("/product", require(__dirname + "/routes/product"));
 
 // 05-member
 
@@ -26,3 +25,5 @@ const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started");
 });
+
+
