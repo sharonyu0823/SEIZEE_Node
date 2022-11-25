@@ -29,6 +29,8 @@ app.use(async (req, res, next) => {
     } catch (ex) {}
   }
 
+  console.log('afterauth:', auth)
+
   next();
 });
 

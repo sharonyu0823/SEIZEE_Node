@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
       // console.log(req.body)
 
       const [result] = await db.query(sql, [
-        "default.png",
+        "noname.png",
         req.body.mbrName,
         req.body.mbrEmail,
         req.body.mbrPass,
