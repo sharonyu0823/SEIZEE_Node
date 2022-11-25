@@ -42,7 +42,7 @@ app.use("/forum",require(__dirname + "/routes/forum"));
 // 03-shop
 app.use("/api/shop", require(__dirname + "/routes/shop"));
 // 04-product
-app.use("/product_list", require(__dirname + "/routes/product"));
+app.use("/product", require(__dirname + "/routes/product"));
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
