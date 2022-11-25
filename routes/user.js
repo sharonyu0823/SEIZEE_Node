@@ -143,7 +143,8 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET
     );
     // console.log(row);
-    // console.log(token);
+    console.log("token", token);
+
     output.auth = {
       mb_sid,
       mb_photo,
@@ -212,6 +213,10 @@ router.get("/profile/:sid", async (req, res) => {
     error: "",
     row: [],
   };
+
+  // if(res.locals.auth.account) {
+  // return
+  // }
 
   // TODO: 從JWT拿sid 網址sid拿掉
 
