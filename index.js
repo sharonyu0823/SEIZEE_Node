@@ -35,12 +35,16 @@ app.use(async (req, res, next) => {
 // routes
 //00-home
 app.use("/api/seizee", require(__dirname + "/routes/home"));
+
 // 01-cart
+app.use('/cart',require(__dirname + '/routes/cart'));
 
 // 02-forum
 app.use("/forum",require(__dirname + "/routes/forum"));
+
 // 03-shop
 app.use("/api/shop", require(__dirname + "/routes/shop"));
+
 // 04-product
 app.use("/product", require(__dirname + "/routes/product"));
 
@@ -55,7 +59,7 @@ app.use(express.static("public"));
 
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
-  console.log("server started");
+  console.log("server started, server port: ", port);
 });
 
 module.exports = app;
