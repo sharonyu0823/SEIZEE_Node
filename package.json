@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon",
-    "start": "echo 123",
+    "dev": "nodemon index.js --dev",
+    "start": "node index.js --production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
