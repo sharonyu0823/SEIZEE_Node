@@ -38,7 +38,7 @@ app.use("/api/seizee", require(__dirname + "/routes/home"));
 // 01-cart
 
 // 02-forum
-
+app.use("/forum",require(__dirname + "/routes/forum"));
 // 03-shop
 app.use("/api/shop", require(__dirname + "/routes/shop"));
 // 04-product
