@@ -33,12 +33,14 @@ app.use(async (req, res, next) => {
 });
 
 // routes
+//00-home
+app.use("/api/seizee", require(__dirname + "/routes/home"));
 // 01-cart
 
 // 02-forum
 
 // 03-shop
-
+app.use("/api/shop", require(__dirname + "/routes/shop"));
 // 04-product
 app.use("/product_list", require(__dirname + "/routes/product"));
 
@@ -56,4 +58,4 @@ app.listen(port, () => {
   console.log("server started");
 });
 
-module.exports = app
+module.exports = app;
