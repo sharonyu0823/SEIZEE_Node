@@ -46,6 +46,7 @@ app.use("/product_list", require(__dirname + "/routes/product"));
 app.use("/user", require(__dirname + "/routes/user"));
 
 // 06-event
+app.use("/event", require(__dirname + "/routes/event"));
 
 // 環境設定
 app.use(express.static("public"));
@@ -54,3 +55,5 @@ const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started");
 });
+
+module.exports = app
