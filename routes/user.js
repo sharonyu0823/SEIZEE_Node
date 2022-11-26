@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
+const upload = require(__dirname + "/../modules/upload_img");
 const jwt = require("jsonwebtoken");
+const fs = require("fs").promises;
 // const Joi= require('joi');
 
 // ====================================
@@ -9,33 +11,44 @@ const jwt = require("jsonwebtoken");
 router.post("/register", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // 這邊要把checkuser的錯誤try catch在這邊
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
   const [result] = await db.query(sql, [req.body.mbrEmail]);
+  console.log("I am here");
 
   if (result.length === 1) {
+    console.log("result: ", result);
+    console.log("result.length: ", result.length);
     output.success = false;
     output.error = "帳號重覆";
   } else {
     try {
       const sql =
-        "INSERT INTO `member`(`mb_name`, `mb_email`, `mb_pass`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, NOW(), NOW(), 1)";
+        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
 
       // console.log(req.body)
 
       const [result] = await db.query(sql, [
+        "default.png",
         req.body.mbrName,
         req.body.mbrEmail,
         req.body.mbrPass,
+        req.body.mbuGender,
+        req.body.mbuAddressCity,
+        req.body.mbuAddressArea,
+        req.body.mbuAddressDetail,
+        req.body.mbuPhone,
       ]);
 
       if (result.affectedRows) output.success = true;
-    } catch {
+    } catch (e) {
       output.success = false;
-      output.error = "帳號重覆";
+      output.error = "發生錯誤";
+
+      console.log(e);
     }
   }
 
@@ -47,7 +60,7 @@ router.post("/register", async (req, res) => {
 router.post("/checkUser", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
@@ -73,7 +86,7 @@ router.post("/checkUser", async (req, res) => {
 router.post("/login", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
     auth: {},
   };
 
@@ -129,7 +142,7 @@ router.post("/login", async (req, res) => {
       },
       process.env.JWT_SECRET
     );
-    console.log(row);
+    // console.log(row);
     // console.log(token);
     output.auth = {
       mb_sid,
@@ -147,7 +160,7 @@ router.post("/login", async (req, res) => {
 router.post("/forgotPass", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 有沒有email 然後用後端發送email
@@ -176,7 +189,7 @@ router.post("/forgotPass", async (req, res) => {
 router.put("/updatePass", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 更換密碼適用uuid判斷
@@ -196,19 +209,22 @@ router.put("/updatePass", async (req, res) => {
 router.get("/profile/:sid", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
+    row: [],
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉
 
   const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
-  const [rows] = await db.query(sql, [req.params.sid]);
+  const [row] = await db.query(sql, [req.params.sid]);
 
-  if (rows.length === 1) {
+  if (row.length === 1) {
     output.success = true;
+    output.row = row[0];
   }
-  // console.log(rows);
-  // console.log(!rows);
+  console.log(row);
+  console.log(row[0]);
+  console.log(!row);
   // console.log(!rows.length);
 
   res.json(output);
@@ -216,29 +232,63 @@ router.get("/profile/:sid", async (req, res) => {
 
 // ====================================
 // 個人資料-編輯
-router.put("/profile/:sid", async (req, res) => {
+router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉
 
-  const sql =
-    "UPDATE `member` SET `mb_photo`=?,`mb_nickname`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
-  const [result] = await db.query(sql, [
-    req.body.mbPhoto,
-    req.body.mbNickname,
-    req.body.mbGender,
-    req.body.mbAddressCity,
-    req.body.mbAddressArea,
-    req.body.mbAddressDetail,
-    req.body.mbPhone,
-    req.params.sid,
-  ]);
+  if (!!req.file) {
+    const sql =
+      "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
 
-  if (result.changedRows) output.success = true;
-  console.log(result.changedRows);
+    console.log("gender:", req.body.mb_gender);
+
+    const [result] = await db.query(sql, [
+      req.file.originalname,
+      req.body.mb_gender,
+      req.body.mb_address_city,
+      req.body.mb_address_area,
+      req.body.mb_address_detail,
+      req.body.mb_phone,
+      req.params.sid,
+    ]);
+
+    if (result.changedRows) {
+      output.success = true;
+    } else {
+      output.error = "沒有更新";
+    }
+  } else {
+    const sql1 =
+      "UPDATE `member` SET `mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
+
+    const [result] = await db.query(sql1, [
+      req.body.mb_gender,
+      req.body.mb_address_city,
+      req.body.mb_address_area,
+      req.body.mb_address_detail,
+      req.body.mb_phone,
+      req.params.sid,
+    ]);
+
+    // console.log("gender:", req.body.mb_gender);
+
+    if (result.changedRows) {
+      output.success = true;
+    } else {
+      output.error = "沒有更新";
+    }
+  }
+
+  // console.log(result.changedRows);
+  // console.log(req.body.mbuPhoto);
+  // console.log(req.file.originalname);
+  // console.log(req.file);
+  // console.log(req.body.mb_gender);
+  // console.log(req.body.mb_phone);
 
   res.json(output);
 });
@@ -248,7 +298,7 @@ router.put("/profile/:sid", async (req, res) => {
 router.delete("/deleteAccount/:sid", async (req, res) => {
   const output = {
     success: false,
-    error: {},
+    error: "",
   };
 
   // TODO: 從JWT拿sid 網址sid拿掉

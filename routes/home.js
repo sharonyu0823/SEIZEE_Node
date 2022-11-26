@@ -1,30 +1,15 @@
-const express = require("express");
-const router = express.Router();
-const db = require(__dirname + '/../modules/db_connect');
+var express = require('express');
+var router = express.Router();
+const db = require(__dirname + "/../modules/db_connect");
 const cors = require("cors");
-//const { application } = require("express");
 
+/* GET home page. */
+router.get('/',  async(req, res, next)=>{
+  // res.render('index', { title: 'Express' });
+  // const [shop_rows] = await db.query("SELECT * FROM `shop_list`");
+  const shop_c_sql = "SELECT s.*, fc.`product_categories` FROM `shop_list` s JOIN `shop_address_city` c ON s.`shop_address_city_sid` = c.`sid` JOIN `shop_address_area` a ON s.`shop_address_area_sid` = a.`sid` JOIN `food_product` f ON s.`sid` = f.`shop_list_sid` JOIN `food_category` fc ON f.`product_categories_sid` = fc.`sid` GROUP BY s.`sid`";
+    const [shop_c_rows] = await db.query(shop_c_sql);
+  res.json({ shop_c_rows });
+});
 
-router.get('/recipe-posts', async(req, res) => {
-    const recipePost = "SELECT * FROM `cooking_post` JOIN `member` ON `cooking_post`.`member_sid` = `member`.`mb_sid` ORDER BY `sid` DESC";
-    const [recipePostRows] = await db.query(recipePost);
-    
-    res.json({recipePostRows});
-})
-
-router.get('/shop-posts', async(req, res) => {
-    const shopPost = "SELECT * FROM `share_post` JOIN `member` ON `share_post`.`member_sid` = `member`.`mb_sid` ORDER BY `sid` DESC";
-    const [shopPostRows] = await db.query(shopPost);
-    
-    res.json({shopPostRows});
-})
-
-
-router.get('/official-posts', async(req, res) => {
-    const officialPost = "SELECT * FROM `official_post` ORDER BY `sid` DESC";
-    const [officialPostRows] = await db.query(officialPost);
-    
-    res.json({officialPostRows});
-})
-
-module.exports = router
+module.exports = router;
