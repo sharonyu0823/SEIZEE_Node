@@ -17,6 +17,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // routes
+
+// 00-homepage
+app.use('/home', require(__dirname + '/routes/home'));
+
 // 01-cart
 app.use('/cart',require(__dirname + '/routes/cart'));
 
