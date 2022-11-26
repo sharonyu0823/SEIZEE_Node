@@ -207,7 +207,7 @@ router.put("/updatePass", async (req, res) => {
 // 登入之後
 // ====================================
 // 個人資料-讀取
-router.get("/profile/:sid", async (req, res) => {
+router.get("/profile", async (req, res) => {
   const output = {
     success: false,
     error: "",
@@ -221,15 +221,15 @@ router.get("/profile/:sid", async (req, res) => {
   // TODO: 從JWT拿sid 網址sid拿掉
 
   const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
-  const [row] = await db.query(sql, [req.params.sid]);
+  const [row] = await db.query(sql, [res.locals.auth.mb_sid]);
 
   if (row.length === 1) {
     output.success = true;
     output.row = row[0];
   }
-  console.log(row);
-  console.log(row[0]);
-  console.log(!row);
+  console.log("row", row);
+  console.log("row[0]", row[0]);
+  console.log("!row", !row);
   // console.log(!rows.length);
 
   res.json(output);
@@ -237,7 +237,7 @@ router.get("/profile/:sid", async (req, res) => {
 
 // ====================================
 // 個人資料-編輯
-router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
+router.put("/profile", upload.single("mb_photo"), async (req, res) => {
   const output = {
     success: false,
     error: "",
@@ -258,13 +258,13 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
       req.body.mb_address_area,
       req.body.mb_address_detail,
       req.body.mb_phone,
-      req.params.sid,
+      res.locals.auth.mb_sid,
     ]);
 
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新";
+      output.error = "沒有更新1";
     }
   } else {
     const sql1 =
@@ -276,7 +276,7 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
       req.body.mb_address_area,
       req.body.mb_address_detail,
       req.body.mb_phone,
-      req.params.sid,
+      res.locals.auth.mb_sid,
     ]);
 
     // console.log("gender:", req.body.mb_gender);
@@ -284,12 +284,13 @@ router.put("/profile/:sid", upload.single("mb_photo"), async (req, res) => {
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新";
+      output.error = "沒有更新2";
     }
   }
 
   // console.log(result.changedRows);
   // console.log(req.body.mbuPhoto);
+  // console.log(req.file);
   // console.log(req.file.originalname);
   // console.log(req.file);
   // console.log(req.body.mb_gender);
@@ -308,7 +309,7 @@ router.delete("/deleteAccount/:sid", async (req, res) => {
 
   // TODO: 從JWT拿sid 網址sid拿掉
   const sql = "DELETE FROM `member` WHERE `mb_sid`= ?";
-  const [result] = await db.query(sql, [req.params.sid]);
+  const [result] = await db.query(sql, [res.locals.auth.mb_sid]);
 
   res.json({ success: !!result.affectedRows });
   // console.log(result.affectedRows) // 1

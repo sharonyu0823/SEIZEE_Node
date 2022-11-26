@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(async (req, res, next) => {
   res.locals.auth = {}; // 預設值
   let auth = req.get("Authorization");
-
+  console.log("req.:", req.path);
   console.log("beforeauth:", auth);
 
   if (auth && auth.indexOf("Bearer ") === 0) {
@@ -37,8 +37,8 @@ app.use(async (req, res, next) => {
   console.log("afterauth:", auth);
   console.log("process.env.JWT_SECRET:", process.env.JWT_SECRET);
   console.log("res.locals:", res.locals);
+  console.log("res.locals.auth.mb_sid:", res.locals.auth.mb_sid);
   // console.log("payload:", payload);
-  // locals.auth.account
 
   next();
 });
