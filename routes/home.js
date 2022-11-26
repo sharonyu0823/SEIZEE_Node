@@ -22,7 +22,7 @@ router.get('/shop-posts', async(req, res) => {
 
 router.get('/official-posts', async(req, res) => {
     const officialPost = "SELECT * FROM `official_post` ORDER BY `sid` DESC";
-    const [officialPostRows] = await db.query(sharePost);
+    const [officialPostRows] = await db.query(officialPost);
     
     res.json({officialPostRows});
 })
