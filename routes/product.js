@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require(__dirname + "/../modules/db_connect2");
+const db = require(__dirname + "/../modules/db_connect");
 const cors = require("cors");
 
 //商品列表及細節頁
@@ -82,8 +82,8 @@ router.get('/suggest', async (req, res) => {
     "WHERE `food_product`.product_category_sid in (SELECT `product_category_sid` " +
     "FROM `food_product` WHERE `food_product`.sid = 1) " +
     "AND `food_product`.sid <> 1 " +
-    "order by r limit 3 ";
-    //  console.log(suggest_sql);
+    "order by r limit 5 ";
+     console.log(suggest_sql);
     // return suggest_sql;
     const [suggest_rows] = await db.query(suggest_sql)
     res.json({suggest_rows})
