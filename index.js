@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const corsOptions = {
   credentials: true,
   origin: function (origin, callback) {
-    console.log({ origin: origin });
+    // console.log({ origin: origin });
     callback(null, true);
   },
 };
@@ -20,24 +20,24 @@ app.use(express.json());
 app.use(async (req, res, next) => {
   res.locals.auth = {}; // 預設值
   let auth = req.get("Authorization");
-  console.log("req.:", req.path);
-  console.log("beforeauth:", auth);
+  // console.log("req.:", req.path);
+  // console.log("beforeauth:", auth);
 
   if (auth && auth.indexOf("Bearer ") === 0) {
     auth = auth.slice(7);
     try {
       const payload = await jwt.verify(auth, process.env.JWT_SECRET);
       res.locals.auth = payload;
-      console.log("payload:", payload);
+      console.log("payload123:", payload);
     } catch (error) {
       console.log("jwt錯誤");
     }
   }
 
-  console.log("afterauth:", auth);
-  console.log("process.env.JWT_SECRET:", process.env.JWT_SECRET);
-  console.log("res.locals:", res.locals);
-  console.log("res.locals.auth.mb_sid:", res.locals.auth.mb_sid);
+  // console.log("afterauth:", auth);
+  // console.log("process.env.JWT_SECRET:", process.env.JWT_SECRET);
+  // console.log("res.locals:", res.locals);
+  // console.log("res.locals.auth.mb_sid:", res.locals.auth.mb_sid);
   // console.log("payload:", payload);
 
   next();

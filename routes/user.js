@@ -158,7 +158,7 @@ router.post("/login", async (req, res) => {
 
 // ====================================
 // 忘記密碼
-router.post("/forgotPass", async (req, res) => {
+router.post("/checkForgotPass", async (req, res) => {
   const output = {
     success: false,
     error: "",
@@ -174,40 +174,62 @@ router.post("/forgotPass", async (req, res) => {
 
   if (result.length === 1) {
     output.success = true;
-
-    // TODO: 有沒有email 然後用後端發送email
-    // uuid
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "seizee1214@gmail.com",
-        pass: "smvjibastauhypeo",
-      },
-    });
-
-    const mailOptions = {
-      from: "seizee1214@gmail.com",
-      to: "yu5286pp@gmail.com",
-      subject: "[SEIZEE] 密碼重設",
-      html: '<p>親愛的 XX 您好</p><p>請點選 <a herf="">重設密碼</a> 重新設定您的新密碼，謝謝。</p>',
-    };
-
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log("Email sent: " + info.response);
-      }
-    });
   } else {
     output.success = false;
     output.error = "帳號不存在";
   }
 
   res.json(output);
+});
+
+// 忘記密碼-發送信件
+router.post("/sendForgotPass", async (req, res) => {
+  const output = {
+    success: false,
+    error: "",
+  };
+
+  const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
+
+  const [result] = await db.query(sql, [req.body.mbfEmail]);
+  console.log("forgot result", result);
+  // console.log(!result);
+  console.log("result.length", result.length);
+  console.log("result.mb_name", result[0].mb_name);
+
+  // TODO: 有沒有email 然後用後端發送email
+  // uuid
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "seizee1214@gmail.com",
+      pass: "smvjibastauhypeo",
+    },
+  });
+
+  const mailOptions = {
+    from: "seizee1214@gmail.com",
+    to: req.body.mbfEmail,
+    subject: "[SEIZEE] 密碼重設",
+    html: `<p>親愛的 ${result[0].mb_name} 您好</p><p>請點選 <a href="http://localhost:${process.env.FRONT_END_PORT}/reset-pass">重設密碼</a> 重新設定您的新密碼，謝謝。</p>`,
+  };
+
+  try {
+    let info = await transporter.sendMail(mailOptions);
+    console.log(info);
+    console.log("Email sent: " + info.response);
+    output.success = true;
+  } catch (error) {
+    // console.log(error);
+    output.success = false;
+  }
+  // console.log(error)
+
+  res.json(output);
 
   // Node.js Send an Email: https://www.w3schools.com/nodejs/nodejs_email.asp
   // Node.js 透過 Gmail 發送信件: https://learningsky.io/how-to-send-the-email-using-the-gmail-smtp-in-node-js/
+  // nodemailer: https://nodemailer.com/about/#example
 });
 
 // ====================================
@@ -252,9 +274,9 @@ router.get("/profile", async (req, res) => {
     output.success = true;
     output.row = row[0];
   }
-  console.log("row", row);
-  console.log("row[0]", row[0]);
-  console.log("!row", !row);
+  // console.log("row", row);
+  // console.log("row[0]", row[0]);
+  // console.log("!row", !row);
   // console.log(!rows.length);
 
   res.json(output);
@@ -274,7 +296,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     const sql =
       "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
 
-    console.log("gender:", req.body.mb_gender);
+    // console.log("gender:", req.body.mb_gender);
 
     const [result] = await db.query(sql, [
       req.file.originalname,
@@ -320,6 +342,54 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
   // console.log(req.file);
   // console.log(req.body.mb_gender);
   // console.log(req.body.mb_phone);
+
+  res.json(output);
+});
+
+// 個人資料-編輯-更改JWT AUTH資料(一旦個人資料更新後)
+router.post("/updateAuth", async (req, res) => {
+  const output = {
+    success: false,
+    error: "",
+    auth: {},
+  };
+
+  const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
+
+  const [result] = await db.query(sql, [res.locals.auth.mb_sid]);
+  const row = result[0];
+  // console.log('auth res.locals.auth', res.locals.auth);
+  // console.log('auth res.locals.auth.mb_sid', res.locals.auth.mb_sid);
+  // console.log('auth result', result);
+  // console.log('auth row', row);
+  // console.log(row.length);
+
+  if (row) {
+    output.success = true;
+    // JWT
+    const { mb_sid, mb_photo, mb_email } = row;
+    // console.log(row);
+    const token = jwt.sign(
+      {
+        mb_sid,
+        mb_photo,
+        mb_email,
+      },
+      process.env.JWT_SECRET
+    );
+    // console.log(row);
+    console.log("token", token);
+
+    output.auth = {
+      mb_sid,
+      mb_photo,
+      mb_email,
+      token,
+    };
+  } else {
+    output.success = false;
+    output.error = "尚未更新";
+  }
 
   res.json(output);
 });
