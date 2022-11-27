@@ -143,7 +143,7 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET
     );
     // console.log(row);
-    console.log("token", token);
+    // console.log("token", token);
 
     output.auth = {
       mb_sid,
@@ -197,6 +197,8 @@ router.post("/sendForgotPass", async (req, res) => {
   console.log("result.length", result.length);
   console.log("result.mb_name", result[0].mb_name);
 
+  const row = result[0];
+
   // TODO: 有沒有email 然後用後端發送email
   // uuid
   const transporter = nodemailer.createTransport({
@@ -224,6 +226,28 @@ router.post("/sendForgotPass", async (req, res) => {
     output.success = false;
   }
   // console.log(error)
+
+  if (output.success) {
+    const sql = "UPDATE `member` SET `mb_forget_pass`=? WHERE mb_email = ?";
+
+    // JWT
+    const { mb_sid, mb_photo, mb_email } = row;
+    // console.log(row);
+    const token = jwt.sign(
+      {
+        mb_sid,
+        mb_photo,
+        mb_email,
+      },
+      process.env.JWT_SECRET
+    );
+    // console.log(row);
+    console.log("checkForgotPass token", token);
+
+    const result = await db.query(sql, [token, req.body.mbfEmail]);
+
+    if (result.affectedRows) output.success = true;
+  }
 
   res.json(output);
 
@@ -378,7 +402,7 @@ router.post("/updateAuth", async (req, res) => {
       process.env.JWT_SECRET
     );
     // console.log(row);
-    console.log("token", token);
+    // console.log("token", token);
 
     output.auth = {
       mb_sid,
