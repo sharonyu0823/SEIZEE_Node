@@ -189,6 +189,7 @@ router.post("/sendForgotPass", async (req, res) => {
     error: "",
   };
 
+  // 確認資料庫有沒有這個email
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
 
   const [result] = await db.query(sql, [req.body.mbfEmail]);
@@ -197,10 +198,22 @@ router.post("/sendForgotPass", async (req, res) => {
   console.log("result.length", result.length);
   console.log("result.mb_name", result[0].mb_name);
 
+  // 利用JWT產生token 並暫時存在資料庫
   const row = result[0];
+  const { mb_sid, mb_photo, mb_email } = row;
+  // console.log(row);
+  const token = jwt.sign(
+    {
+      mb_sid,
+      mb_photo,
+      mb_email,
+    },
+    process.env.JWT_SECRET
+  );
+  // console.log(row);
+  // console.log("checkForgotPass token", token);
 
-  // TODO: 有沒有email 然後用後端發送email
-  // uuid
+  // 有的話，用後端發送email
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -213,12 +226,12 @@ router.post("/sendForgotPass", async (req, res) => {
     from: "seizee1214@gmail.com",
     to: req.body.mbfEmail,
     subject: "[SEIZEE] 密碼重設",
-    html: `<p>親愛的 ${result[0].mb_name} 您好</p><p>請點選 <a href="http://localhost:${process.env.FRONT_END_PORT}/reset-pass">重設密碼</a> 重新設定您的新密碼，謝謝。</p>`,
+    html: `<p>親愛的 ${result[0].mb_name} 您好</p><p>請點選 <a href="http://localhost:${process.env.FRONT_END_PORT}/reset-pass?token=${token}">重設密碼</a> 重新設定您的新密碼，謝謝。</p>`,
   };
 
   try {
     let info = await transporter.sendMail(mailOptions);
-    console.log(info);
+    // console.log(info);
     console.log("Email sent: " + info.response);
     output.success = true;
   } catch (error) {
@@ -229,20 +242,6 @@ router.post("/sendForgotPass", async (req, res) => {
 
   if (output.success) {
     const sql = "UPDATE `member` SET `mb_forget_pass`=? WHERE mb_email = ?";
-
-    // JWT
-    const { mb_sid, mb_photo, mb_email } = row;
-    // console.log(row);
-    const token = jwt.sign(
-      {
-        mb_sid,
-        mb_photo,
-        mb_email,
-      },
-      process.env.JWT_SECRET
-    );
-    // console.log(row);
-    console.log("checkForgotPass token", token);
 
     const result = await db.query(sql, [token, req.body.mbfEmail]);
 
@@ -264,11 +263,18 @@ router.put("/updatePass", async (req, res) => {
     error: "",
   };
 
+  console.log(req.body);
+
   // TODO: 更換密碼適用uuid判斷
 
-  const sql = "UPDATE `member` SET `mb_pass`=? WHERE mb_email = ?";
+  const sql =
+    "UPDATE `member` SET `mb_pass`=?, `mb_forget_pass`=? WHERE `mb_sid` = ?";
 
-  const [result] = await db.query(sql, [req.body.mbPass, req.body.mbEmail]);
+  const [result] = await db.query(sql, [
+    req.body.mbResetPass,
+    null,
+    res.locals.auth.mb_sid,
+  ]);
 
   if (result.changedRows) output.success = true;
 
