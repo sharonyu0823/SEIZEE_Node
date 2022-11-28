@@ -30,7 +30,7 @@ router.get('/list', async (req, res) => {
     if (whereCondition != '')
         whereCondition = ' WHERE ' + whereCondition
     // console.log(whereCondition);
-    let product_sql = " SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, `inventory_qty`, `member_sid`, SUM(inventory_qty) - SUM(`order-details`.quantity) AS inventory_qty " + 
+    let product_sql = " SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, `member_sid`, SUM(inventory_qty) - SUM(case when `order-details`.quantity is null then 0 else `order-details`.quantity end) AS inventory_qty " + 
     "FROM food_product " +
     "LEFT JOIN shop_list on `shop_list`.sid = shop_list_sid " + 
     "LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " + 
@@ -44,7 +44,18 @@ router.get('/list', async (req, res) => {
     //  console.log(product_sql);
     // return product_sql;
     const [product_rows] = await db.query(product_sql)
-    res.json({product_rows})
+
+    let shop = null;
+    if(product_rows.length){
+        const shop_list_sid = product_rows[0].shop_list_sid;
+        const sql = `SELECT * FROM shop_list WHERE sid=?`
+        const [shop_data] = await db.query(sql, [shop_list_sid]);
+
+        if(shop_data.length){
+            shop = shop_data[0];
+        }
+    }
+    res.json({product_rows, shop})
 })
 
 //商品新增收藏
@@ -64,10 +75,11 @@ router.get("/add", async (req, res) => {
 //商品取消收藏
 router.get('/delete', async (req, res) => {
     const member_sid = req.query.member_sid;
-    const food_product_sid = req.query.food_product_sid;
+    const food_product_sid = req.query.sid;
     const delectCollection =
-    "DELETE FROM `product_collection` WHERE food_product_sid = ? AND member_sid = ? ";
-    const [delect_rows] = await db.query(delectCollection)
+    "DELETE FROM `product_collection` WHERE food_product_sid = ?, member_sid = ? ";
+    const format = sqlString.format(delectCollection, [food_product_sid, member_sid])
+    const [delect_rows] = await db.query(format)
     res.json({delect_rows})
   })
 
@@ -81,7 +93,6 @@ router.get('/collection', async (req,res) => {
         const [collection_rows] = await db.query(collect_sql)
         res.json({collection_rows})
     }
-  
 })
 
 //隨機推薦相關產品
@@ -106,7 +117,7 @@ router.get('/suggest', async (req, res) => {
 //商品輪播牆用group_concat把picture_url綁定
 router.get('/picture', async (req, res) => {
     const product_picture_sid = req.query.product_picture_sid
-    let picture_sql = "SELECT food_product.sid, `shop_list_sid`, `product_category_sid`, `category_name`, group_concat(picture_url)" +
+    let picture_sql = "SELECT food_product.sid, `shop_list_sid`, `product_category_sid`, `category_name`, group_concat(picture_url) pic " +
     "FROM `food_product` " +
     "LEFT JOIN `product_category` ON `product_category`.sid = `product_category_sid`" +
     "LEFT JOIN `product_picture` ON `food_product_sid`= `food_product`.sid " +
