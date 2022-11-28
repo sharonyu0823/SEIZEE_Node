@@ -36,7 +36,7 @@ app.use(async (req, res, next) => {
 
 // 00-homepage
 app.use('/home', require(__dirname + '/routes/homepage'));
-app.use("/api/seizee", require(__dirname + "/routes/home"));
+// app.use("/api/seizee", require(__dirname + "/routes/home"));
 
 // 01-cart
 app.use('/cart',require(__dirname + '/routes/cart'));
