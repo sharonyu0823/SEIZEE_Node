@@ -137,12 +137,13 @@ router.post("/login", async (req, res) => {
     const [result] = await db.query(sql, [new Date(), req.body.mblEmail]);
 
     // JWT
-    const { mb_sid, mb_photo, mb_email } = row;
+    const { mb_sid, mb_photo, mb_name, mb_email } = row;
     // console.log(row);
     const token = jwt.sign(
       {
         mb_sid,
         mb_photo,
+        mb_name,
         mb_email,
       },
       process.env.JWT_SECRET
@@ -153,6 +154,7 @@ router.post("/login", async (req, res) => {
     output.auth = {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
       token,
     };
@@ -205,12 +207,13 @@ router.post("/sendForgotPass", async (req, res) => {
 
   // 利用JWT產生token 並暫時存在資料庫
   const row = result[0];
-  const { mb_sid, mb_photo, mb_email } = row;
+  const { mb_sid, mb_photo, mb_name, mb_email } = row;
   // console.log(row);
   const token = jwt.sign(
     {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
     },
     process.env.JWT_SECRET
@@ -402,12 +405,13 @@ router.post("/updateAuth", async (req, res) => {
   if (row) {
     output.success = true;
     // JWT
-    const { mb_sid, mb_photo, mb_email } = row;
+    const { mb_sid, mb_photo, mb_name, mb_email } = row;
     // console.log(row);
     const token = jwt.sign(
       {
         mb_sid,
         mb_photo,
+        mb_name,
         mb_email,
       },
       process.env.JWT_SECRET
@@ -418,6 +422,7 @@ router.post("/updateAuth", async (req, res) => {
     output.auth = {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
       token,
     };
