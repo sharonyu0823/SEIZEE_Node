@@ -5,6 +5,7 @@ const upload = require(__dirname + "/../modules/05_upload_img");
 const jwt = require("jsonwebtoken");
 const fs = require("fs").promises;
 const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
 
 // ====================================
 // 註冊
@@ -31,11 +32,14 @@ router.post("/register", async (req, res) => {
 
       // console.log(req.body)
 
+      const encryptedPass = await bcrypt.hash(req.body.mbrPass, 10);
+      // console.log(encryptedPass);
+
       const [result] = await db.query(sql, [
         "noname.png",
         req.body.mbrName,
         req.body.mbrEmail,
-        req.body.mbrPass,
+        encryptedPass,
         req.body.mbuGender,
         req.body.mbuAddressCity,
         req.body.mbuAddressArea,
@@ -107,7 +111,8 @@ router.post("/login", async (req, res) => {
   }
 
   // 登入密碼的驗證
-  if (req.body.mblPass === row.mb_pass) {
+  const encryptedCompare = await bcrypt.compare(req.body.mblPass, row.mb_pass);
+  if (encryptedCompare) {
     output.success = true;
   } else {
     output.success = false;
