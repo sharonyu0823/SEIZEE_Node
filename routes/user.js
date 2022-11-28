@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
-const upload = require(__dirname + "/../modules/upload_img");
+const upload = require(__dirname + "/../modules/05_upload_img");
 const jwt = require("jsonwebtoken");
 const fs = require("fs").promises;
 const nodemailer = require("nodemailer");
