@@ -108,7 +108,7 @@ router.get('/suggest', async (req, res) => {
     "FROM `food_product` WHERE `food_product`.sid = 1) " +
     "AND `food_product`.sid <> 1 " +
     "order by r limit 5 ";
-     console.log(suggest_sql);
+    //  console.log(suggest_sql);
     // return suggest_sql;
     const [suggest_rows] = await db.query(suggest_sql)
     res.json({suggest_rows})
