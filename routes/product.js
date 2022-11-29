@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 const cors = require("cors");
 const sqlString=require('sqlstring');
+const upload = require(__dirname + "/../modules/04_upload_img")
 
 //商品列表及細節頁
 router.get('/list', async (req, res) => {
@@ -77,10 +78,10 @@ router.get('/delete', async (req, res) => {
     const member_sid = req.query.member_sid;
     const food_product_sid = req.query.sid;
     const delectCollection =
-    "DELETE FROM `product_collection` WHERE food_product_sid = ?, member_sid = ? ";
+    "DELETE FROM `product_collection` WHERE food_product_sid = ? AND member_sid = ? ";
     const format = sqlString.format(delectCollection, [food_product_sid, member_sid])
     const [delect_rows] = await db.query(format)
-    res.json({delect_rows})
+    res.json({delect_rows}) 
   })
 
 //商品收藏清單
@@ -93,6 +94,15 @@ router.get('/collection', async (req,res) => {
         const [collection_rows] = await db.query(collect_sql)
         res.json({collection_rows})
     }
+})
+router.get('/collect',async(req,res)=>{
+    const sid = req.query.sid
+    const collect =
+    "SELECT * FROM `product_collection` WHERE food_product_sid =? ";
+    const format = sqlString.format(collect, [sid])
+    const [rows] = await db.query(format)
+    res.json({rows}) 
+
 })
 
 //隨機推薦相關產品
@@ -108,7 +118,7 @@ router.get('/suggest', async (req, res) => {
     "FROM `food_product` WHERE `food_product`.sid = 1) " +
     "AND `food_product`.sid <> 1 " +
     "order by r limit 5 ";
-     console.log(suggest_sql);
+    //  console.log(suggest_sql);
     // return suggest_sql;
     const [suggest_rows] = await db.query(suggest_sql)
     res.json({suggest_rows})
@@ -127,6 +137,22 @@ router.get('/picture', async (req, res) => {
     // return picture_sql;
     const [product_rows] = await db.query(picture_sql)
     res.json({product_rows})
+})
+
+//商品留言
+router.post('/comment', upload.none(), async (req, res) => {
+    const comment = {
+        success:false,
+        code:0,
+        error:{},
+        poseData:req.body, //除錯用
+    }
+    const commentsql = "INSERT INTO `product_comment`(`post_sid`, `member_sid`, `product_comment`, `created_at`) VLUES (1,2,3,4) "
+    const [comment_rows] = await db.query(commentsql,[
+        req.body.content,
+    ])
+    if(comment.comment_rows) output.success = true;
+    res.json({output})
 })
 
 module.exports = router;
