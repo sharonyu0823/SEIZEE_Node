@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
-const upload = require(__dirname + "/../modules/upload_img");
+const upload = require(__dirname + "/../modules/05_upload_img");
 const jwt = require("jsonwebtoken");
 const fs = require("fs").promises;
 const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
 
 // ====================================
 // 註冊
@@ -31,11 +32,14 @@ router.post("/register", async (req, res) => {
 
       // console.log(req.body)
 
+      const encryptedPass = await bcrypt.hash(req.body.mbrPass, 10);
+      // console.log(encryptedPass);
+
       const [result] = await db.query(sql, [
         "noname.png",
         req.body.mbrName,
         req.body.mbrEmail,
-        req.body.mbrPass,
+        encryptedPass,
         req.body.mbuGender,
         req.body.mbuAddressCity,
         req.body.mbuAddressArea,
@@ -107,7 +111,8 @@ router.post("/login", async (req, res) => {
   }
 
   // 登入密碼的驗證
-  if (req.body.mblPass === row.mb_pass) {
+  const encryptedCompare = await bcrypt.compare(req.body.mblPass, row.mb_pass);
+  if (encryptedCompare) {
     output.success = true;
   } else {
     output.success = false;
@@ -132,12 +137,13 @@ router.post("/login", async (req, res) => {
     const [result] = await db.query(sql, [new Date(), req.body.mblEmail]);
 
     // JWT
-    const { mb_sid, mb_photo, mb_email } = row;
+    const { mb_sid, mb_photo, mb_name, mb_email } = row;
     // console.log(row);
     const token = jwt.sign(
       {
         mb_sid,
         mb_photo,
+        mb_name,
         mb_email,
       },
       process.env.JWT_SECRET
@@ -148,6 +154,7 @@ router.post("/login", async (req, res) => {
     output.auth = {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
       token,
     };
@@ -200,12 +207,13 @@ router.post("/sendForgotPass", async (req, res) => {
 
   // 利用JWT產生token 並暫時存在資料庫
   const row = result[0];
-  const { mb_sid, mb_photo, mb_email } = row;
+  const { mb_sid, mb_photo, mb_name, mb_email } = row;
   // console.log(row);
   const token = jwt.sign(
     {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
     },
     process.env.JWT_SECRET
@@ -397,12 +405,13 @@ router.post("/updateAuth", async (req, res) => {
   if (row) {
     output.success = true;
     // JWT
-    const { mb_sid, mb_photo, mb_email } = row;
+    const { mb_sid, mb_photo, mb_name, mb_email } = row;
     // console.log(row);
     const token = jwt.sign(
       {
         mb_sid,
         mb_photo,
+        mb_name,
         mb_email,
       },
       process.env.JWT_SECRET
@@ -413,6 +422,7 @@ router.post("/updateAuth", async (req, res) => {
     output.auth = {
       mb_sid,
       mb_photo,
+      mb_name,
       mb_email,
       token,
     };
