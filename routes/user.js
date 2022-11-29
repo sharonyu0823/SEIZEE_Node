@@ -278,8 +278,10 @@ router.put("/updatePass", async (req, res) => {
   const sql =
     "UPDATE `member` SET `mb_pass`=?, `mb_forget_pass`=? WHERE `mb_sid` = ?";
 
+  const encryptedPass = await bcrypt.hash(req.body.mbResetPass, 10);
+
   const [result] = await db.query(sql, [
-    req.body.mbResetPass,
+    encryptedPass,
     null,
     res.locals.auth.mb_sid,
   ]);
