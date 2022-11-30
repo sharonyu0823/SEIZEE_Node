@@ -26,13 +26,13 @@ router.get('/list', async (req, res) => {
     if (whereCondition != '')
         whereCondition = ' WHERE ' + whereCondition
     // console.log(whereCondition);
-    let product_sql = " SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, SUM(inventory_qty) - SUM(case when `order_details`.quantity is null then 0 else `order-details`.quantity end) AS inventory_qty " + 
+    let product_sql = " SELECT `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, SUM(inventory_qty) - SUM(case when `order_details`.quantity is null then 0 else `order_details`.quantity end) AS inventory_qty " + 
     "FROM food_product " +
     "LEFT JOIN shop_list on `shop_list`.sid = shop_list_sid " + 
     "LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " + 
     "LEFT JOIN `product_category` on `product_category`.`sid` = `product_category_sid` " +
     "LEFT JOIN `product_inventory` on `product_inventory`.sid = `food_product`.sid " +
-    "LEFT JOIN `order-details` on `product_sid` = `food_product`.sid " +
+    "LEFT JOIN `order_details` on `product_sid` = `food_product`.sid " +
     whereCondition +  
     " GROUP BY `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, `inventory_qty` " +
     " ORDER BY `product_category_sid`, `food_product`.`sid`"
