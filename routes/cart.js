@@ -101,9 +101,11 @@ router.get('/add-order/:ordernum', async (req, res) => {
 router.get('/payment-done/:mbsid', async (req, res) => {
     const mbsid = req.params.mbsid
 
-    const this_order_details_sql = `SELECT * FROM order_history
-    JOIN order_details ON order_history.order_num = order_details.order_num
-    WHERE order_history.member_sid = ${mbsid}
+    const this_order_details_sql = `SELECT * FROM order_history 
+    JOIN order_details ON order_history.order_num = order_details.order_num 
+    JOIN order_status ON order_history.order_status_sid = order_status.sid 
+    JOIN order_payment ON order_history.order_payment_sid = order_payment.sid 
+    WHERE order_history.member_sid = 2 
     ORDER BY order_history.created_at DESC`;
     const [this_order_details_rows] = await db.query(this_order_details_sql);
     const row =  { ...this_order_details_rows}; 
