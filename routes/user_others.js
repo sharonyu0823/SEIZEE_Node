@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
-const jwt = require("jsonwebtoken");
 
 // 記得使用JWT postman測試需要在headers加Authorization & Bearer --token--(這個要去前端登入後取得token/或後端取得也可以但要自己另外寫測試)
 
