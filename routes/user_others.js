@@ -30,20 +30,21 @@ router.get("/orders", async (req, res) => {
 });
 
 // 訂單查詢-訂單細項
-router.get("/order-details", async (req, res) => {
+router.post("/order-details", async (req, res) => {
   const output = {
     success: false,
     error: "",
     row: [],
   };
 
-  console.log("order-details");
+  // console.log("order-details");
+  console.log('req.body', req.body);
 
   const sql = "SELECT * FROM `order-details` WHERE `order_num` = ?";
   const [row] = await db.query(sql, [req.body.mbOrderNum]);
 
-  console.log(row);
-  console.log(row.length);
+  // console.log(row);
+  // console.log(row.length);
 
   if (row.length >= 1) {
     output.success = true;
