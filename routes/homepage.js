@@ -5,7 +5,7 @@ const cors = require("cors");
 //const { application } = require("express");
 
 router.get('/news-crawl', async(req, res) => {
-    const recipeNews = "SELECT * FROM `cooking_post` JOIN `member` ON `cooking_post`.`member_sid` = `member`.`mb_sid` ORDER BY `sid` DESC LIMIT 1";
+    const recipeNews = "SELECT * FROM `cooking_post` JOIN `member` ON `cooking_post`.`member_sid` = `member`.`mb_sid` ORDER BY `sid` LIMIT 1";
     const [recipeNewsRow] = await db.query(recipeNews);
     
     const eventNews = "SELECT * FROM `event_all` ORDER BY `sid` DESC LIMIT 1";
@@ -14,10 +14,14 @@ router.get('/news-crawl', async(req, res) => {
     const seizeeNews = "SELECT * FROM `official_post` ORDER BY `sid` LIMIT 1";
     const [seizeeNewsRow] = await db.query(seizeeNews);
 
+    const shopNews = "SELECT * FROM `store_post` ORDER BY `sid` DESC LIMIT 1";
+    const [shopNewsRow] = await db.query(shopNews);
+
     const newsCrawlRows = {
         'recipeNewsRow': recipeNewsRow[0],
         'eventNewsRow': eventNewsRow[0],
         'seizeeNewsRow': seizeeNewsRow[0],
+        'shopNewsRow': shopNewsRow[0],
     };
 
     res.json(newsCrawlRows);
