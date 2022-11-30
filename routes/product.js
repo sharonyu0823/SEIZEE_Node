@@ -106,7 +106,7 @@ router.get('/collection', async (req,res) => {
         WHERE = `WHERE mb_sid=${mb_sid}`}
         
     let collect_sql = `SELECT * FROM product_collection ${WHERE}`
-    console.log(collect_sql);
+    // console.log(collect_sql);
     const [collection_rows] = await db.query(collect_sql)
     res.json({collection_rows})
     
@@ -147,7 +147,7 @@ router.post('/comment', upload.none(), async (req, res) => {
     const [comment_rows] = await db.query(commentsql,[
         req.body.food_product_sid,
         req.body.mb_sid,
-        req.body.comment,
+        req.body.user_comment,
     ])
    
     if(comment.comment_rows) 
@@ -160,7 +160,7 @@ router.get('/filterCategory', async (req, res) => {
     const category_sid = req.query.category_sid
     const filter_sql = "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_description` From `food_product` LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " +
     "WHERE `product_category_sid` IN (" + category_sid + ") "
-    console.log(filter_sql);
+    // console.log(filter_sql);
     const [filter_rows] = await db.query(filter_sql)
     res.json({filter_rows})
 }) 
