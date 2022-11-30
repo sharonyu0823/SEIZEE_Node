@@ -98,7 +98,7 @@ router.get('/collection', async (req,res) => {
 router.get('/collect',async(req,res)=>{
     const sid = req.query.sid
     const collect =
-    "SELECT * FROM `product_collection` WHERE food_product_sid =? ";
+    "SELECT * FROM `product_collection` WHERE food_product_sid = ? ";
     const format = sqlString.format(collect, [sid])
     const [rows] = await db.query(format)
     res.json({rows}) 
@@ -115,19 +115,20 @@ router.get('/suggest', async (req, res) => {
     "ORDER BY `product_picture`.sid " +
     "LIMIT 1 ) " +
     "WHERE `food_product`.product_category_sid in (SELECT `product_category_sid` " +
-    "FROM `food_product` WHERE `food_product`.sid = 1) " +
-    "AND `food_product`.sid <> 1 " +
-    "order by r limit 5 ";
+    "FROM `food_product` WHERE `food_product`.sid = " + food_product_sid + ") " +
+    "AND `food_product`.sid <> " + food_product_sid +
+    " order by r limit 5 ";
     //  console.log(suggest_sql);
     // return suggest_sql;
     const [suggest_rows] = await db.query(suggest_sql)
     res.json({suggest_rows})
+    //傳sid進來
 })
 
 //商品輪播牆用group_concat把picture_url綁定
 router.get('/picture', async (req, res) => {
     const product_picture_sid = req.query.product_picture_sid
-    let picture_sql = "SELECT food_product.sid, `shop_list_sid`, `product_category_sid`, `category_name`, group_concat(picture_url) pic " +
+    const picture_sql = "SELECT food_product.sid, `shop_list_sid`, `product_category_sid`, `category_name`, group_concat(picture_url) pic " +
     "FROM `food_product` " +
     "LEFT JOIN `product_category` ON `product_category`.sid = `product_category_sid`" +
     "LEFT JOIN `product_picture` ON `food_product_sid`= `food_product`.sid " +
@@ -140,19 +141,34 @@ router.get('/picture', async (req, res) => {
 })
 
 //商品留言
-router.post('/comment', upload.none(), async (req, res) => {
-    const comment = {
-        success:false,
-        code:0,
-        error:{},
-        poseData:req.body, //除錯用
-    }
-    const commentsql = "INSERT INTO `product_comment`(`post_sid`, `member_sid`, `product_comment`, `created_at`) VLUES (1,2,3,4) "
-    const [comment_rows] = await db.query(commentsql,[
-        req.body.content,
-    ])
-    if(comment.comment_rows) output.success = true;
-    res.json({output})
+// router.post('/comment', upload.none(), async (req, res) => {
+//     const comment = {
+//         success:false,
+//         code:0,
+//         error:{},
+//         poseData:req.body, //除錯用
+//     }
+//     const commentsql = "INSERT INTO `product_comment`( `food_product_sid`, `member_sid`, `user_comment`, `created_at`) VALUES (?,?,'?',NOW()) "
+//     console.log(req.body);
+//     // const [comment_rows] = await db.query(commentsql,[
+//     //     req.body.food_product_sid,
+//     //     req.body.member_sid,
+//     //     req.body.comment,
+//     // ])
+   
+//     // if(comment.comment_rows) 
+//     output.success = true;
+//     res.json({output})
+// })
+
+//篩選所有商品
+router.get('/filter', async (req, res) => {
+    const category_sid = req.query.category_sid
+    const filter_sql = "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_description` From `food_product` LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " +
+    "WHERE `product_category_sid` IN (" + category_sid + ") "
+    console.log(filter_sql);
+    const [filter_rows] = await db.query(filter_sql)
+    res.json({filter_rows})
 })
 
 module.exports = router;
