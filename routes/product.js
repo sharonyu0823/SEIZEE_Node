@@ -141,25 +141,25 @@ router.get('/picture', async (req, res) => {
 })
 
 //商品留言
-// router.post('/comment', upload.none(), async (req, res) => {
-//     const comment = {
-//         success:false,
-//         code:0,
-//         error:{},
-//         poseData:req.body, //除錯用
-//     }
-//     const commentsql = "INSERT INTO `product_comment`( `food_product_sid`, `member_sid`, `user_comment`, `created_at`) VALUES (?,?,'?',NOW()) "
-//     console.log(req.body);
-//     // const [comment_rows] = await db.query(commentsql,[
-//     //     req.body.food_product_sid,
-//     //     req.body.member_sid,
-//     //     req.body.comment,
-//     // ])
+router.post('/comment', upload.none(), async (req, res) => {
+    const comment = {
+        success:false,
+        code:0,
+        error:{},
+        poseData:req.body, //除錯用
+    }
+    const commentsql = "INSERT INTO `product_comment`( `food_product_sid`, `member_sid`, `user_comment`, `created_at`) VALUES (?,?,'?',NOW()) "
+    console.log(req.body);
+    // const [comment_rows] = await db.query(commentsql,[
+    //     req.body.food_product_sid,
+    //     req.body.member_sid,
+    //     req.body.comment,
+    // ])
    
-//     // if(comment.comment_rows) 
-//     output.success = true;
-//     res.json({output})
-// })
+    // if(comment.comment_rows) 
+    output.success = true;
+    res.json({output})
+})
 
 //篩選所有商品
 router.get('/filter', async (req, res) => {
