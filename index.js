@@ -54,6 +54,7 @@ app.use(async (req, res, next) => {
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
+app.use("/user-search", require(__dirname + "/routes/user_others"));
 
 // 06-event
 

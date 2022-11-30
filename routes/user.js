@@ -271,9 +271,7 @@ router.put("/updatePass", async (req, res) => {
     error: "",
   };
 
-  console.log(req.body);
-
-  // TODO: 更換密碼適用uuid判斷
+  // console.log(req.body);
 
   const sql =
     "UPDATE `member` SET `mb_pass`=?, `mb_forget_pass`=? WHERE `mb_sid` = ?";
@@ -305,8 +303,6 @@ router.get("/profile", async (req, res) => {
   // return
   // }
 
-  // TODO: 從JWT拿sid 網址sid拿掉
-
   const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
   const [row] = await db.query(sql, [res.locals.auth.mb_sid]);
 
@@ -329,8 +325,6 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     success: false,
     error: "",
   };
-
-  // TODO: 從JWT拿sid 網址sid拿掉
 
   if (!!req.file) {
     const sql =
