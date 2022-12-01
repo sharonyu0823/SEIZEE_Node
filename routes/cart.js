@@ -87,12 +87,34 @@ router.get('/mb/:mbsid', async (req, res) => {
     }
 })
 
-// CartDone - 將付款成功的訂單寫入資料庫（待完成）
+// CartDone - 將付款成功的訂單寫入資料庫（假資料測試ok）
 // 歷史訂單+訂單明細+會員sid+商品列表
-router.get('/add-order/:ordernum', async (req, res) => {
+router.post('/add-order/:ordernum', async (req, res) => {
     const ordernum = req.params.ordernum
-    const create_order_sql = ``;
+    const member_sid = 123
+    // console.log(ordernum, req.body)
+    const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, origin_total, total, member_sid) VALUES (?,NOW(), ?,?,?)`;
+    const [add_order_history_row] = await db.query(add_order_history_sql, [
+        req.params.ordernum,
+        req.body.totalPrice,
+        req.body.totalPrice,
+        member_sid
+    ]);
 
+    
+    for(let i =0; i<req.body.userCart.length;i++){
+        const add_order_details_sql = `INSERT INTO order_details (order_num, created_at, product_sid, product_name, quantity, origin_price, total_price) VALUES (?, NOW(), ?, ?, ?, ?, ?)`;
+        const [add_order_details_rows] = await db.query(add_order_details_sql,[
+            req.params.ordernum,
+            req.body.userCart[i].sid,
+            req.body.userCart[i].name,
+            req.body.userCart[i].amount,
+            req.body.userCart[i].price,
+            req.body.userCart[i].price,
+        ])
+    }
+
+    res.send('訂單成功寫入資料庫')
 })
 
 
