@@ -12,14 +12,17 @@ router.get("/orders", async (req, res) => {
     row: [],
   };
 
-  console.log("order");
+  // console.log("order");
 
-  const sql = "SELECT * FROM `order-history` WHERE `mb_sid` = ?";
+  const sql =
+    "SELECT oh.*, os.`order_status_name` FROM `order_history` oh JOIN `order_status` os ON oh.`order_status_sid` = os.`sid` WHERE `mb_sid` = ?";
+
+  // const sql = "SELECT * FROM `order_history` WHERE `mb_sid` = ?";
   const [row] = await db.query(sql, [res.locals.auth.mb_sid]);
-  console.log(res.locals.auth.mb_sid);
-  console.log(row);
+  // console.log(res.locals.auth.mb_sid);
+  // console.log(row);
 
-  console.log("row.length", row.length);
+  // console.log("row.length", row.length);
 
   if (row.length >= 1) {
     output.success = true;
@@ -38,9 +41,9 @@ router.post("/order-details", async (req, res) => {
   };
 
   // console.log("order-details");
-  console.log('req.body', req.body);
+  // console.log('req.body', req.body);
 
-  const sql = "SELECT * FROM `order-details` WHERE `order_num` = ?";
+  const sql = "SELECT * FROM `order_details` WHERE `order_num` = ?";
   const [row] = await db.query(sql, [req.body.mbOrderNum]);
 
   // console.log(row);
