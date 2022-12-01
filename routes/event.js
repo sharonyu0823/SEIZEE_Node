@@ -3,6 +3,14 @@ const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 const cors = require("cors"); 
 
+// router.get('/event-test', async(req, res, next)=>{
+//     const test_sql = "SELECT event_all.*, event_style.styles FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid`;";
+//     const [test_rows] = await db.query(test_sql);
+//     console.log(test_rows);
+    
+//     res.json(test_rows);
+// })
+
 router.get('/event-test/workshop', async(req, res, next)=>{
     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 1;";
     const [test_rows] = await db.query(test_sql);
