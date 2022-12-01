@@ -97,7 +97,7 @@ router.get('/delete', async (req, res) => {
     res.json({delect_rows}) 
   })
 
-//商品收藏清單
+//商品列表頁抓收藏清單 mb_sid
 router.get('/collection', async (req,res) => {
     const mb_sid = req.query.mb_sid === undefined ? '0' : req.query.mb_sid
     let WHERE='WHERE 1'
@@ -111,6 +111,8 @@ router.get('/collection', async (req,res) => {
     res.json({collection_rows})
     
 })
+
+//商品細節頁抓收藏清單 food_product_sid
 router.get('/collect',async(req,res)=>{
     const sid = req.query.sid
     const collect =
@@ -122,11 +124,12 @@ router.get('/collect',async(req,res)=>{
 
 //商品輪播牆用group_concat把picture_url綁定
 router.get('/picture', async (req, res) => {
+    const sid = req.query.sid
     const product_picture_sid = req.query.product_picture_sid
     const picture_sql = "SELECT `food_product`.sid, `shop_list_sid`, group_concat(trim(both char(13) from picture_url)) AS picture FROM `food_product` " +
     // "LEFT JOIN `product_category` ON `product_category`.sid = `product_category_sid`" +
     "LEFT JOIN `product_picture` ON `food_product_sid`= `food_product`.sid " +
-    "WHERE food_product.sid < 10 " +
+    "WHERE `food_product`.sid  " +
     "GROUP BY food_product.sid, `shop_list_sid` " 
     // console.log(picture_sql);
     // return picture_sql;
@@ -147,12 +150,12 @@ router.post('/comment', upload.none(), async (req, res) => {
     const [comment_rows] = await db.query(commentsql,[
         req.body.food_product_sid,
         req.body.mb_sid,
-        req.body.user_comment,
+        req.body.comment,
     ])
    
     if(comment.comment_rows) 
-    output.success = true;
-    res.json({output})
+    comment.success = true;
+    res.json({comment})
 })
 
 //篩選所有商品種類
