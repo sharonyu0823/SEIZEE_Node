@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const moment = require("moment-timezone");
 
 // top-level middleware
 const corsOptions = {
@@ -18,6 +19,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use(async (req, res, next) => {
+  // DateTime
+  res.locals.toDatetimeString = (d) => moment(d).format("YYYY-MM-DD  HH:mm:ss");
+
+  // JWT auth
   res.locals.auth = {}; // 預設值
   let auth = req.get("Authorization");
   // console.log("req.:", req.path);
@@ -63,6 +68,7 @@ app.use("/product", require(__dirname + "/routes/product"));
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
+app.use("/user-search", require(__dirname + "/routes/user_others"));
 
 // 06-event
 app.use("/event", require(__dirname + "/routes/event"));
