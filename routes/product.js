@@ -36,7 +36,7 @@ router.get('/list', async (req, res) => {
     whereCondition +  
     " GROUP BY `food_product`.sid, `shop_list_sid`, `shop_name`, `shop_deadline`, `picture_url`, food_product.`product_name`, `product_category_sid`, `category_name`, `category_icon`,`product_description`, `unit_price`, `sale_price`, `product_launch`, `inventory_qty` " +
     " ORDER BY `product_category_sid`, `food_product`.`sid`"
-     console.log(product_sql);
+    //  console.log(product_sql);
     // return product_sql;
     const [product_rows] = await db.query(product_sql)
 
@@ -182,18 +182,21 @@ router.get('/filterCategory', async (req, res) => {
 router.get('/category', async (req, res) => {
     const sid = req.query.sid
     const category_sql ="SELECT * FROM `product_category` "
-    const format = sqlString.format(category_sql, [sid])
-    const [category_rows] = await db.query(format)
+    const [category_rows] = await db.query(category_sql)
     res.json({category_rows}) 
 })
       
-
-// app.post("/category", (req, res) => {
-//     res.json(req.body);
-
-// const categorysql = "SELECT `category` * FROM category "
-// const [filter_rows] = await db.query(filter_sql)
-// res.json({filter_rows})
+// //篩選商品種類
+// app.post("/category", async (req, res) => {
+//     const output = {
+//         success:false,
+//         code:0,
+//         error:{},
+//         poseData:req.body, //除錯用
+//     }
+// const catesql = "SELECT * FROM `product_category` WHERE `product_category`.sid = ? "
+// const [cate_rows] = await db.query(catesql)
+// res.json({cate_rows})
 // })
 
 module.exports = router;

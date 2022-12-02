@@ -53,10 +53,10 @@ app.use('/home', require(__dirname + '/routes/homepage'));
 app.use('/cart',require(__dirname + '/routes/cart'));
 
 // 02-forum
-app.use("/forum",require(__dirname + "/routes/forum"));
+// app.use("/forum",require(__dirname + "/routes/forum"));
 
 // 03-shop
-app.use("/api/shop", require(__dirname + "/routes/shop"));
+// app.use("/api/shop", require(__dirname + "/routes/shop"));
 
 // 04-product
 app.use("/product", require(__dirname + "/routes/product"));
@@ -65,7 +65,7 @@ app.use("/product", require(__dirname + "/routes/product"));
 app.use("/user", require(__dirname + "/routes/user"));
 
 // 06-event
-app.use("/event", require(__dirname + "/routes/event"));
+// app.use("/event", require(__dirname + "/routes/event"));
 
 // 環境設定
 app.use(express.static("public"));
