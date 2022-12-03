@@ -158,6 +158,14 @@ router.post('/comment', upload.none(), async (req, res) => {
     res.json({comment})
 })
 
+//商品種類
+router.get('/category', async (req, res) => {
+    const sid = req.query.sid
+    const category_sql ="SELECT * FROM `product_category` "
+    const [category_rows] = await db.query(category_sql)
+    res.json({category_rows}) 
+})
+
 //篩選所有商品種類
 router.get('/filterCategory', async (req, res) => {
     const category_sid = req.query.category_sid
@@ -176,27 +184,6 @@ router.get('/filterCategory', async (req, res) => {
 //     "WHERE `product_category_sid` "
 //     const [filter_rows] = await db.query(filter_sql)
 //     res.json({filter_rows})
-// })
-
-//商品種類
-router.get('/category', async (req, res) => {
-    const sid = req.query.sid
-    const category_sql ="SELECT * FROM `product_category` "
-    const [category_rows] = await db.query(category_sql)
-    res.json({category_rows}) 
-})
-      
-// //篩選商品種類
-// app.post("/category", async (req, res) => {
-//     const output = {
-//         success:false,
-//         code:0,
-//         error:{},
-//         poseData:req.body, //除錯用
-//     }
-// const catesql = "SELECT * FROM `product_category` WHERE `product_category`.sid = ? "
-// const [cate_rows] = await db.query(catesql)
-// res.json({cate_rows})
 // })
 
 module.exports = router;
