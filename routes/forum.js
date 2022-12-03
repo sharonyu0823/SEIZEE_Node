@@ -4,13 +4,15 @@ const db = require(__dirname+"/../modules/db_connect");
 const cors = require("cors");
 const fileUpload = require('express-fileupload');
 const _ = require('lodash');
-const upload = require(__dirname+"/../modules/p-upload_img")
+const { includes } = require('lodash');
+const upload = require(__dirname+"/../modules/02_upload_img")
 
 const app = express();
+
 // router.get('/inner_cook', async(req,res)=>{
-//     const cookPost = "SELECT * FROM `cooking_post`";
+//     const cookPost = "SELECT * FROM `forum_cooking_post`";
 //     const [cookInnerRows] = await db.query(cookPost);
-//     const cookInst = "SELECT *  FROM `instructions`";
+//     const cookInst = "SELECT *  FROM `forum_instructions`";
 //     const [inst] = await db.query(cookInst);
 
 //     cookInnerRows.forEach(p=>{
@@ -26,18 +28,18 @@ const app = express();
 
 router.get('/cook/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const cookPost = `SELECT * FROM cooking_post WHERE sid=?`;
+    const cookPost = `SELECT * FROM forum_cooking_post WHERE sid=?`;
     const [cookInnerRows] = await db.query(cookPost, [sid]);
     if(! cookInnerRows.length){
         return res.json({ success: false});
     }
     const cookRows = cookInnerRows[0];
-    const cookInner = "SELECT *  FROM `instructions` WHERE cooking_post_sid=?";
+    const cookInner = "SELECT *  FROM `forum_instructions` WHERE cooking_post_sid=?";
     const [inst] = await db.query(cookInner, [sid]);
 
-    const step = `SELECT * FROM step WHERE cooking_post_sid=?`
+    const step = `SELECT * FROM forum_step WHERE cooking_post_sid=?`
     const [stepRows] = await db.query(step, [sid]);
-    const comment = `SELECT * FROM comment WHERE categories_sid=4 AND post_sid=?;`
+    const comment = `SELECT * FROM forum_comment WHERE categories_sid=4 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
 
     cookRows.instructions = inst;
@@ -60,65 +62,100 @@ router.get('/cook/inner/:sid', async(req,res)=>{
 
 router.get('/official/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const officialPost = `SELECT * FROM official_post WHERE sid=?`;
+    const officialPost = `SELECT * FROM forum_official_post WHERE sid=?`;
     const [officialInnerRows] = await db.query(officialPost, [sid]);
     if(! officialInnerRows.length){
         return res.json({ success: false});
     }
     const officialRows = officialInnerRows[0];
-    const comment = `SELECT * FROM comment WHERE categories_sid=1 AND post_sid=?;`
+    const comment = `SELECT * FROM forum_comment WHERE categories_sid=1 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
     officialRows.comment = commentRows;
-    res.json({officialRows});
+    res.json(officialRows);
 })
 
 router.get('/store/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const storePost = "SELECT * FROM `store_post`";
-    const [storePostRows] = await db.query(storePost,[sid]);
+    const storePost = `SELECT * FROM forum_store_post WHERE sid=?`;
     const [storeInnerRows] = await db.query(storePost,[sid]);
     if(! storeInnerRows.length){
         return res.json({ success: false}); 
     }
     const storeRows = storeInnerRows[0];
-    const comment = `SELECT * FROM comment WHERE categories_sid=2 AND post_sid=?;`
+    const comment = `SELECT * FROM forum_comment WHERE categories_sid=2 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
     storeRows.comment = commentRows;
-    res.json({storePostRows});
+    res.json(storeRows);
 })
 router.get('/share/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const sharePost = "SELECT * FROM `share_post`";
+    const sharePost = `SELECT * FROM forum_share_post WHERE sid=?`;
     const [shareInnerRows] = await db.query(sharePost,[sid]);
     if(! shareInnerRows.length){
         return res.json({ success: false}); 
     }
     const shareRows = shareInnerRows[0];
-    const comment = `SELECT * FROM comment WHERE categories_sid=3 AND post_sid=?;`
+    const comment = `SELECT * FROM forum_comment WHERE categories_sid=3 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
     shareRows.comment = commentRows;
-    res.json({shareRows});
+    res.json(shareRows);
 })
-
+//http://localhost:3002/forum/post_cook?likes[]=%E7%89%9B%E8%82%89&likes[]=%E9%A6%99%E8%8F%87
+//篩選食材
 router.get('/post_cook', async(req,res)=>{
-    const cookPost = "SELECT * FROM `cooking_post`";
+    const likes = req.query.likes;
+    console.log({likes});
+    let cookPost = "SELECT * FROM `forum_cooking_post`";
+    if(likes && likes.length){
+        cookPost = "SELECT cp.* FROM `forum_cooking_post` cp JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid WHERE ins.instrucContent IN ('" + likes.join("','")+ "')";
+    }
     const [cookPostRows] = await db.query(cookPost);
+    const cookInst = "SELECT *  FROM `forum_instructions`";
+    const [inst] = await db.query(cookInst);
+
+    cookPostRows.forEach(p=>{
+        inst.forEach(i=>{
+            if(i.cooking_post_sid===p.sid){
+                p.instructions ||= [];
+                p.instructions.push(i)
+            }
+        })
+    })
+    
     res.json({cookPostRows});
 })
 router.get('/post_official', async(req,res)=>{
-    const officialPost = "SELECT * FROM `official_post`";
+    const officialPost = "SELECT * FROM `forum_official_post`";
     const [officialPostRows] = await db.query(officialPost);
     res.json({officialPostRows});
 })
 router.get('/post_store', async(req,res)=>{
-    const storePost = "SELECT * FROM `store_post`";
+    const storePost = "SELECT * FROM `forum_store_post`";
     const [storePostRows] = await db.query(storePost);
     res.json({storePostRows});
 })
 router.get('/post_share', async(req,res)=>{
-    const sharePost = "SELECT * FROM `share_post`";
+    const sharePost = "SELECT * FROM `forum_share_post`";
     const [sharePostRows] = await db.query(sharePost);
     res.json({sharePostRows});
+})
+router.get('/all_post', async(req,res)=>{
+    const officialPost = "SELECT * FROM `forum_official_post`";
+    const [officialPostRows] = await db.query(officialPost);
+    const sharePost = "SELECT * FROM `forum_share_post`";
+    const [sharePostRows] = await db.query(sharePost);
+    const storePost = "SELECT * FROM `forum_store_post`";
+    const [storePostRows] = await db.query(storePost);
+    const cookPost = "SELECT * FROM `forum_cooking_post` ";
+    const [cookPostRows] = await db.query(cookPost);
+
+    const allPostRows = [
+        ...officialPostRows,
+        ...sharePostRows,
+        ...storePostRows,
+        ...cookPostRows,
+    ]
+    res.json(allPostRows);
 })
 router.post('/message',upload.none() ,async(req,res)=>{
     const output = {
@@ -127,7 +164,7 @@ router.post('/message',upload.none() ,async(req,res)=>{
         error: {},
         postData: req.body, // 除錯用
       };
-    const messSql =  'INSERT INTO `comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,4,1,?,0,NOW())';
+    const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,4,1,?,0,NOW())';
    
     const [result] = await db.query(messSql,[
     req.body.content,
@@ -178,6 +215,7 @@ app.post('/upload-photos', async (req, res) => {
     res.status(500).json(err);
 }
 });
+
 
 
 
