@@ -345,7 +345,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新1";
+      output.error = "沒有更新";
     }
   } else {
     const sql1 =
@@ -365,7 +365,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新2";
+      output.error = "沒有更新";
     }
   }
 
