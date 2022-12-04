@@ -24,7 +24,7 @@ app.use("/forum",require(__dirname + "/routes/forum"));
 
 
 // 環境設定
-
+app.use(express.static("public"));
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started");

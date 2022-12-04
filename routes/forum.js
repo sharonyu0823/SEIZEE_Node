@@ -6,8 +6,9 @@ const fileUpload = require('express-fileupload');
 const _ = require('lodash');
 const { includes } = require('lodash');
 const upload = require(__dirname+"/../modules/02_upload_img")
+const path = require('path');
+const fs = require('fs')
 
-const app = express();
 
 // router.get('/inner_cook', async(req,res)=>{
 //     const cookPost = "SELECT * FROM `forum_cooking_post`";
@@ -45,17 +46,6 @@ router.get('/cook/inner/:sid', async(req,res)=>{
     cookRows.instructions = inst;
     cookRows.steps = stepRows;
     cookRows.comment = commentRows;
-
-    /*
-    cookInnerRows.forEach(p=>{
-        inst.forEach(i=>{
-            if(i.cooking_post_sid===p.sid){
-                p.instructions ||= [];
-                p.instructions.push(i)
-            }
-        })
-    })
-    */
     res.json(cookRows);
 })
 
@@ -103,12 +93,31 @@ router.get('/share/inner/:sid', async(req,res)=>{
 //http://localhost:3002/forum/post_cook?likes[]=%E7%89%9B%E8%82%89&likes[]=%E9%A6%99%E8%8F%87
 //篩選食材
 router.get('/post_cook', async(req,res)=>{
-    const likes = req.query.likes;
-    console.log({likes});
-    let cookPost = "SELECT * FROM `forum_cooking_post`";
-    if(likes && likes.length){
-        cookPost = "SELECT cp.* FROM `forum_cooking_post` cp JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid WHERE ins.instrucContent IN ('" + likes.join("','")+ "')";
+    const likesOp = req.query.likesOp;
+    const servingOp = req.query.servingOp;
+    const timeOp = req.query.timeOp;
+    // let cookPost = "SELECT * FROM `forum_cooking_post`";
+    let cookPost;
+
+    let $where = ' WHERE 1 ';
+
+    if(likesOp && likesOp.length){
+        $where += " AND ins.instrucContent IN ('" + likesOp.join("','")+ "') ";
     }
+    if(servingOp && servingOp.length){
+        $where += " AND cp.serving IN('" + servingOp.join("','")+ "') ";
+    }
+    if(timeOp && timeOp.length){
+        $where += " AND cp.times IN ('" + timeOp.join("','")+ "') ";
+    }
+    cookPost = `SELECT cp.* FROM forum_cooking_post cp JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid ${$where} GROUP BY cp.sid `;
+
+    console.log({cookPost})
+/*
+    if(likesOp && likesOp.length){
+        cookPost = "SELECT cp.* FROM `forum_cooking_post` cp JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid WHERE ins.instrucContent IN ('" + likesOp.join("','")+ "') AND cp.serving IN('" + servingOp.join("','")+ "') GROUP BY cp.sid AND cp.times IN ('" + timeOp.join("','")+ "') ";
+    }
+*/
     const [cookPostRows] = await db.query(cookPost);
     const cookInst = "SELECT *  FROM `forum_instructions`";
     const [inst] = await db.query(cookInst);
@@ -157,6 +166,8 @@ router.get('/all_post', async(req,res)=>{
     ]
     res.json(allPostRows);
 })
+
+//上傳留言
 router.post('/message',upload.none() ,async(req,res)=>{
     const output = {
         success: false,
@@ -164,59 +175,110 @@ router.post('/message',upload.none() ,async(req,res)=>{
         error: {},
         postData: req.body, // 除錯用
       };
-    const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,4,1,?,0,NOW())';
-   
+    const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,?,?,?,0,NOW())';
+   console.log("req.body",req.body);
+
     const [result] = await db.query(messSql,[
-    req.body.content,
+    req.body.categories_sid,
+    req.body.post_sid,
+    req.body.content, 
    ]) 
    if (result.affectedRows) output.success = true;
    res.json(output);
 })
 
 
-//----圖檔上傳
-app.use(fileUpload({
-    createParentPath: true
-}));
-app.use('/uploads', express.static('uploads'));
-app.post('/upload-photos', async (req, res) => {
-    try {
-        if(!req.files) {
-            res.send({
-                status: false,
-                message: 'No file uploaded'
-            });
-        } else {
-            let photoDtat=[]
-            
-           //loop all files
-          _.forEach(_.keysIn(req.files.photos), (key) => {
-            let photo = req.files.photos[key];
-            
-            //move photo to uploads directory
-            photo.mv('./uploads/' + photo.name);
-
-            //push file details
-            photoDtat.push({
-                name: photo.name,
-                mimetype: photo.mimetype,
-                size: photo.size
-            });
-        });
-
-        //return response
-        res.json({
-            status: true,
-            message: 'Files are uploaded',
-            data: data
-        });
+//發文路由
+router.post('/writeForm',upload.none(),async(req,res)=>{
+    // let r = Math.floor(Math.random()*25)+1;
+    // if(r.toString().length==1){
+    //     r = '0' + r + 'food.png';
+    // } else{
+    //     r = r + 'food.png';
+    // }
+    let data = req.body;
+    console.log('data')
+    console.log(data)
+    console.log('data.img')
+    console.log(data.img)
+    const output = {
+        success: false,
+        code: 0,
+        error: {},
+        postData: req.body,
     }
-} catch (err) {
-    res.status(500).json(err);
-}
-});
+    const writeSql = 'INSERT INTO `forum_cooking_post`( `member_sid`, `categories_sid`, `title`, `img`, `icon`, `induction`, `serving`, `times`, `Ps`, `creat_at`) VALUES (2,4,?,?,1,?,?,?,?,NOW())';
+    const instrSql = 'INSERT INTO `forum_instructions`( `cooking_post_sid`, `instrucContent`, `portion`) VALUES (?,?,?)';
+    const stepSql = 'INSERT INTO `forum_step`( `cooking_post_sid`, `step`, `stepImg`, `stepContent`) VALUES (?,?,?,?)'
+    const [resultWr] = await db.query(writeSql,[
+        data.title,
+        data.img,
+        data.induction, 
+        data.serving, 
+        data.times, 
+        data.ps, 
+       ]) 
+    const [resultIns] = await db.query(instrSql,[
+        data.cooking_post_sid,
+        data.instrucContent, 
+        data.portion, 
+       ]) 
+    const [resultSt] = await db.query(stepSql,[
+        data.cooking_post_sid,
+        data.step, 
+        data.stepImg, 
+        data.stepContent,
+       ]) 
+       if (resultWr.affectedRows) output.success = true;
+       if (resultIns.affectedRows) output.success = true;
+       if (resultSt.affectedRows) output.success = true;
+       res.json(output);
+   
+
+})
 
 
+//TODO:  move to util
+function _uuid() {
+    var d = Date.now();
+    if (typeof performance !== 'undefined' && typeof performance.now === 'function'){
+      d += performance.now(); //use high-precision timer if available
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+//  圖檔上傳
+router.post('/upload',upload.single('file'),async(req,res)=>{
+    console.log('req.file')
+    console.log(req.file)
+    let file = req.file;
+    const newFileName = _uuid() + path.extname(file.filename)
+    const newPath = __dirname + "/../public/images/02-forum/" + newFileName
+    console.log(`older path: ${file.path}`)
+    console.log(`new path: ${newPath}`)
+
+    //move photo to uploads directory
+    fs.rename(file.path, newPath, ()=> { })
+    //push file details
+    const respData = {
+        name: file.name,
+        newFileName: newFileName,
+        mimetype: file.mimetype,
+        size: file.size
+    };
+    res.json(respData);
+})
+
+//取得店家照片
+// router.get('/store_photo', async(req,res)=>{
+//     const storePhoto = "SELECT `shop_cover` FROM `shop_list`";
+//     const [storePhotoRows] = await db.query(storePhoto);
+//     res.json({storePhotoRows});
+// })
 
 
 module.exports = router;
