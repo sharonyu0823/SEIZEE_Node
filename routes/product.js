@@ -37,7 +37,7 @@ router.get("/list", async (req, res) => {
     whereCondition +
     " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
     " ORDER BY `product_category_sid`, `food_product`.`sid` ";
-  console.log(product_sql);
+  // console.log(product_sql);
   // return product_sql;
   const [product_rows] = await db.query(product_sql);
 
@@ -153,17 +153,25 @@ router.post("/comment", upload.none(), async (req, res) => {
     error: {},
     poseData: req.body, //除錯用
   };
+  const ratesql = 
+    "INSERT INTO `product_rating`( `food_product_sid`, `mb_sid`, rating`, `created_at`) VALUES (?,?,?,NOW()) ";
   const commentsql =
     "INSERT INTO `product_comment`( `food_product_sid`, `mb_sid`, `user_comment`, `created_at`) VALUES (?,?,?,NOW()) ";
   // console.log(req.body);
+  const [ratesql_rows] = await db.query(ratesql , [
+    req.body.ood_product_sid,
+    req.body.mb_sid,
+    req.body.rating,
+  ])
   const [comment_rows] = await db.query(commentsql, [
     req.body.food_product_sid,
     req.body.mb_sid,
     req.body.comment,
   ]);
-
+  const [user_comment] = [ratesql_rows] + [comment_rows]
   if (comment.comment_rows) comment.success = true;
-  res.json({ comment });
+
+  res.json({ user_comment });
 });
 
 //商品種類
@@ -184,32 +192,8 @@ router.get("/category", async (req, res) => {
       "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` WHERE `product_category_sid` IN (" + category_sid + ") GROUP BY `food_product`.sid, `picture_url`, `product_name`, `product_price`,`sale_price`, `product_description`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end ";
   }
   const [category_rows] = await db.query(category);
-  console.log(category_rows);
+  // console.log(category_rows);
   res.json({ category_rows });
 });
-
-//篩選所有商品種類
-router.get("/filterCategory", async (req, res) => {
-  const category_sid = req.query.category_sid;
-  const filter_sql =
-    "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_description` From `food_product` LEFT JOIN `product_picture` on `product_picture`.`food_product_sid` = `food_product`.sid " +
-    "LEFT JOIN `product_rating` on `food_product_sid` = `food_product`.sid " +
-    "WHERE `product_category_sid` IN (" +
-    category_sid +
-    ") ";
-  // console.log(filter_sql);
-  const [filter_rows] = await db.query(filter_sql);
-  res.json({ filter_rows });
-});
-
-//篩選
-// router.get('/filter', async (req, res) => {
-//     const category_sid = req.query.category_sid
-//     const filter_sql = "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_description`, `unit_price`, `sale_price`, `product_launch`, `category_name`, `category_icon` FROM `food_product`LEFT JOIN `product_picture` ON `product_picture`.`food_product_sid` = `food_product`.sid " +
-//     "LEFT JOIN `product_category` ON `product_category`.sid = `product_category_sid` " +
-//     "WHERE `product_category_sid` "
-//     const [filter_rows] = await db.query(filter_sql)
-//     res.json({filter_rows})
-// })
 
 module.exports = router;
