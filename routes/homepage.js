@@ -54,4 +54,17 @@ const cors = require("cors");
 //     res.json({officialPostRows});
 // })
 
+
+//活動 banner資料列表
+
+router.get('/event-banner', async(req, res) => {
+    const event_sql = "SELECT * FROM `event_all` ORDER BY `sid` DESC";
+    const [eventRows] = await db.query(event_sql);
+    
+    res.json({eventRows});
+})
+
+
+
+
 module.exports = router
