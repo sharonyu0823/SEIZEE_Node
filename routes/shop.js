@@ -60,6 +60,16 @@ router.get("/shop_cate", async (req, res, next) => {
   const [cate_rows] = await db.query(cate_sql);
   res.json({ cate_rows });
 });
+router.get("/shop_love", async (req, res, next) => {
+  const mb_sid = +req.query.mb_sid;
+  if (!mb_sid) {
+    return res.json({ message: '請先登入', code: '401' });
+  }
+  const lovemember_sql = `SELECT * FROM shop_loved JOIN shop_list ON shop_loved.loveshop_sid = shop_list.sid WHERE lovemb_sid=${mb_sid}`;
+
+  const [lovemember_rows] = await db.query(lovemember_sql);
+  res.json({ lovemember_rows });
+});
 
 // 取得收藏列表
 router.get('/lovedList', async (req, res) => {
