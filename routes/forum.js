@@ -8,6 +8,7 @@ const { includes } = require('lodash');
 const upload = require(__dirname+"/../modules/02_upload_img")
 const path = require('path');
 const fs = require('fs')
+const sqlString =require ("sqlString")
 
 
 // router.get('/inner_cook', async(req,res)=>{
@@ -29,7 +30,7 @@ const fs = require('fs')
 
 router.get('/cook/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const cookPost = `SELECT * FROM forum_cooking_post WHERE sid=?`;
+    const cookPost = "SELECT `forum_cooking_post`.* ,`member`.`mb_photo`, `member`.`mb_name` , `member`.`mb_email` FROM `forum_cooking_post` JOIN `member` ON `forum_cooking_post`.`member_sid` = `member`.`mb_sid` WHERE sid=?";
     const [cookInnerRows] = await db.query(cookPost, [sid]);
     if(! cookInnerRows.length){
         return res.json({ success: false});
@@ -66,7 +67,9 @@ router.get('/official/inner/:sid', async(req,res)=>{
 
 router.get('/store/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const storePost = `SELECT * FROM forum_store_post WHERE sid=?`;
+    const storePost = "SELECT sp.*,`shop_list`.`shop_name` mb_name ,`shop_list`.`shop_phone` mb_email FROM `forum_store_post` sp JOIN `shop_list` ON sp.`store_sid` = `shop_list`.`sid` WHERE sp.`sid`=?";
+
+    // const storePost = "SELECT `forum_store_post`.*,`shop_list`.`shop_name` FROM `forum_store_post` JOIN `shop_list` ON `forum_store_post`.`store_sid`= `shop_list`.`sid` WHERE `forum_store_post`.`sid`=?";
     const [storeInnerRows] = await db.query(storePost,[sid]);
     if(! storeInnerRows.length){
         return res.json({ success: false}); 
@@ -79,7 +82,7 @@ router.get('/store/inner/:sid', async(req,res)=>{
 })
 router.get('/share/inner/:sid', async(req,res)=>{
     const {sid} = req.params;
-    const sharePost = `SELECT * FROM forum_share_post WHERE sid=?`;
+    const sharePost = "SELECT `forum_share_post`.* ,`member`.`mb_photo`, `member`.`mb_name`,`member`.`mb_email` FROM `forum_share_post` JOIN `member` ON `forum_share_post`.`member_sid` = `member`.`mb_sid` WHERE sid=?";
     const [shareInnerRows] = await db.query(sharePost,[sid]);
     if(! shareInnerRows.length){
         return res.json({ success: false}); 
@@ -110,7 +113,7 @@ router.get('/post_cook', async(req,res)=>{
     if(timeOp && timeOp.length){
         $where += " AND cp.times IN ('" + timeOp.join("','")+ "') ";
     }
-    cookPost = `SELECT cp.* FROM forum_cooking_post cp JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid ${$where} GROUP BY cp.sid `;
+    cookPost = `SELECT cp.* ,member.mb_photo, member.mb_name,member.mb_email FROM forum_cooking_post cp JOIN member ON cp.member_sid = member.mb_sid JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid ${$where} GROUP BY cp.sid `;
 
     console.log({cookPost})
 /*
@@ -151,23 +154,24 @@ router.get('/post_official', async(req,res)=>{
     res.json({officialPostRows});
 })
 router.get('/post_store', async(req,res)=>{
-    const storePost = "SELECT * FROM `forum_store_post`";
+    const storePost = "SELECT sp.*,`shop_list`.`shop_name` mb_name ,`shop_list`.`shop_phone`  FROM `forum_store_post` sp JOIN `shop_list` ON sp.`store_sid` = `shop_list`.`sid` ";
     const [storePostRows] = await db.query(storePost);
     res.json({storePostRows});
 })
 router.get('/post_share', async(req,res)=>{
-    const sharePost = "SELECT * FROM `forum_share_post`";
+    const sharePost = "SELECT shp.* ,member.mb_photo, member.mb_name,member.mb_email FROM `forum_share_post` shp JOIN member ON shp.member_sid = member.mb_sid ";
     const [sharePostRows] = await db.query(sharePost);
+
     res.json({sharePostRows});
 })
 router.get('/all_post', async(req,res)=>{
     const officialPost = "SELECT * FROM `forum_official_post`";
     const [officialPostRows] = await db.query(officialPost);
-    const sharePost = "SELECT * FROM `forum_share_post`";
+    const sharePost = "SELECT `forum_share_post`.*, `member`.`mb_photo`, `member`.`mb_name`,`member`.`mb_email` FROM `forum_share_post` JOIN `member` ON `forum_share_post`.`member_sid` = `member`.`mb_sid` ";
     const [sharePostRows] = await db.query(sharePost);
-    const storePost = "SELECT * FROM `forum_store_post`";
+    const storePost = "SELECT `forum_store_post`.*,`shop_list`.`shop_name` mb_name FROM `forum_store_post` JOIN `shop_list` ON `forum_store_post`.`store_sid` = `shop_list`.`sid` ";
     const [storePostRows] = await db.query(storePost);
-    const cookPost = "SELECT * FROM `forum_cooking_post` ";
+    const cookPost = "SELECT `forum_cooking_post`.* , `member`.`mb_photo`, `member`.`mb_name`,`member`.`mb_email` FROM `forum_cooking_post` JOIN `member` ON `forum_cooking_post`.`member_sid` = `member`.`mb_sid` ";
     const [cookPostRows] = await db.query(cookPost);
 
     const allPostRows = [
@@ -187,77 +191,120 @@ router.get('/hashTag', async(req,res)=>{
 })
 
 //收藏
-//商品列表頁抓收藏清單 mb_sid
-router.get('/forum_liked', async (req,res) => {
-    const mb_sid = req.query.mb_sid === undefined ? '0' : req.query.mb_sid
-    let WHERE='WHERE 1'
-    // console.log(mb_sid);
-    if (mb_sid != '0'){
-        WHERE = `WHERE mb_sid=${mb_sid}`}
+router.get('/forum_toggle', async (req,res) => {
+    const mid = req.query.mid ? +req.query.mid : 0;
+    const cid = req.query.cid ? +req.query.cid : 0;
+    const pid = req.query.pid ? +req.query.pid : 0;
+
+    if(!mid || !cid || !pid) return res.json({success: false});
+
+    // `mb_sid`, `categories_sid`, `post_sid`
+
+    let sql = `SELECT * FROM forum_liked WHERE mb_sid=? AND categories_sid=? AND post_sid=?`;
+    const [rows] = await db.query(sql, [mid, cid, pid]);
+    if(rows.length){
+        // had
+        let sql_del = `DELETE FROM forum_liked WHERE mb_sid=? AND categories_sid=? AND post_sid=? `;
+        await db.query(sql_del, [mid, cid, pid]);
+        res.json({success: true, mid, cid, pid, msg:'delete'});
+    } else {
         
-    let collect_sql = `SELECT * FROM forum_liked ${WHERE}`
-    // console.log(collect_sql);
-    const [collection_rows] = await db.query(collect_sql)
-    res.json({collection_rows})
+        let sql_insert = `INSERT INTO forum_liked(mb_sid, categories_sid, post_sid, created_at) VALUES (?,?,?, NOW())`;
+        await db.query(sql_insert, [mid, cid, pid]);
+        res.json({success: true, mid, cid, pid, msg:'insert'});
+    }
+
+})
+
+router.get('/forum_likes', async (req,res) => {
+    const mid = req.query.mid ? +req.query.mid : 0;
+
+    if(!mid ) return res.json({success: false});
+
+    // `mb_sid`, `categories_sid`, `post_sid`
+
+    let sql = `SELECT * FROM forum_liked WHERE mb_sid=? `;
+    const [rows] = await db.query(sql, [mid]);
+
+    res.json({success: true, rows});
     
-})
 
-//商品細節頁抓收藏清單 food_product_sid
-router.get('/forum_liked/inner',async(req,res)=>{
-    const sid = req.query.sid
-    const collect =
-    "SELECT * FROM `forum_liked` WHERE `categories_sid`=?  WHERE `post_sid`=? ";
-    const format = sqlString.format(collect, [sid])
-    const [rows] = await db.query(format)
-    res.json({rows}) 
 })
-// 新增收藏
-router.get('/addLiked', async (req, res) => {
+//商品列表頁抓收藏清單 mb_sid
+// router.get('/forum_liked', async (req,res) => {
+//     const mb_sid = req.query.mb_sid ? +req.query.mb_sid : 0;
+//     if(!mb_sid) res.json({success: false});
 
-    const s_sid = req.query.s_sid;
-    const mb_sid = req.query.mb_sid;
+//     let WHERE='WHERE 1'
+//     // console.log(mb_sid);
+//     if (mb_sid != '0'){
+//         WHERE = `WHERE mb_sid=${mb_sid}`}
+        
+//     let collect_sql = `SELECT * FROM forum_liked ${WHERE}`
+//     // console.log(collect_sql);
+//     const [collection_rows] = await db.query(collect_sql)
+//     res.json({collection_rows})
+    
+// })
+
+// //商品細節頁抓收藏清單 food_product_sid
+// router.get('/forum_liked/inner',async(req,res)=>{
+//     const sid = req.query.sid
+//     const collect =
+//     "SELECT * FROM `forum_liked` WHERE `categories_sid`=?  WHERE `post_sid`=? ";
+//     const format = sqlString.format(collect, [sid])
+//     const [rows] = await db.query(format)
+//     res.json({rows}) 
+// })
+// // 新增收藏
+// router.get('/addLiked', async (req, res) => {
+
+//     const s_sid = req.query.s_sid;
+//     const c_sid = req.query.c_sid;
+//     const mb_sid = req.query.mb_sid;
   
-    // 判斷登入
-    if (!mb_sid) res.json({ message: '請先登入', code: '401' });
+//     // 判斷登入
+//     if (!mb_sid) res.json({ message: '請先登入', code: '401' });
   
-    const addLikeSql =
-      "INSERT INTO `forum_liked`(`member_sid`,`categories_sid`, `post_sid`) VALUES (?,?,?)";
+//     const addLikeSql =
+//       "INSERT INTO `forum_liked`(`member_sid`,`categories_sid`, `post_sid`) VALUES (?,?,?)";
   
-    try {
-      const [addLikeRows] = await db.query(addLikeSql, [s_sid, mb_sid]);
+//     try {
+//       const [addLikeRows] = await db.query(addLikeSql, [s_sid, mb_sid,c_sid]);
   
-      res.json(addLikeRows);
-      if (addLikeRows.addLikeSql) {
-        return res.json({ message: 'success', code: '200' });
-      } else {
-        return res.json({ message: 'fail', code: '403' });
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
-  });
+//       res.json(addLikeRows);
+//       if (addLikeRows.addLikeSql) {
+//         return res.json({ message: 'success', code: '200' });
+//       } else {
+//         return res.json({ message: 'fail', code: '403' });
+//       }
+//     } catch (error) {
+//       console.log(error.message);
+//     }
+//   });
   
-  // 移除收藏
-  router.get('/delLiked', async (req, res) => {
+//   // 移除收藏
+//   router.get('/delLiked', async (req, res) => {
   
-    const s_sid = req.query.s_sid;
-    const mb_sid = req.query.mb_sid;
+//     const s_sid = req.query.s_sid;
+//     const c_sid = req.query.c_sid;
+//     const mb_sid = req.query.mb_sid;
   
-    const delLikeSql = 'DELETE FROM `forum_liked` WHERE member_sid=? AND   categories_sid=? AND post_sid=?';
+//     const delLikeSql = 'DELETE FROM `forum_liked` WHERE member_sid=? AND   categories_sid=? AND post_sid=?';
   
-    try {
-      const [delLikeRows] = await db.query(delLikeSql, [s_sid, mb_sid]);
+//     try {
+//       const [delLikeRows] = await db.query(delLikeSql, [s_sid, mb_sid ,c_sid]);
   
-      res.json(delLikeRows);
-      if (delLikeRows.delLikeSql) {
-        return res.json({ message: 'success', code: '200' });
-      } else {
-        return res.json({ message: 'fail', code: '400' });
-      }
-    } catch (error) {
-      console.log(error.message);
-    }
-  });
+//       res.json(delLikeRows);
+//       if (delLikeRows.delLikeSql) {
+//         return res.json({ message: 'success', code: '200' });
+//       } else {
+//         return res.json({ message: 'fail', code: '400' });
+//       }
+//     } catch (error) {
+//       console.log(error.message);
+//     }
+//   });
 
 
 //上傳留言
