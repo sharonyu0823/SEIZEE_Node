@@ -75,7 +75,6 @@ app.use("/user-search", require(__dirname + "/routes/user_others"));
 
 // 環境設定
 app.use(express.static("public"));
-
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started, server port: ", port);
