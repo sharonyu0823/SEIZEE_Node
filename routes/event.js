@@ -3,8 +3,35 @@ const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 const cors = require("cors"); 
 
-router.get('/event-test', async(req, res, next)=>{
+router.get('/event-test', async(req, res)=>{
     const test_sql = "SELECT event_all.*, event_style.styles FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid`;";
+    const [test_rows] = await db.query(test_sql);
+    res.json(test_rows); 
+})
+router.post('/event-ticket', async(req, res)=>{
+    const {memberSid, timeTable} = req.body
+    if(timeTable && timeTable.length) {
+        for(let item of timeTable){
+            if(item.name){
+                const test_sql = "INSERT INTO event_registered (member_sid, event_sid) VALUES (?, ?)";
+                const [test_rows] = await db.query(test_sql, [
+                    memberSid,
+                    item.sid,
+                ]);
+                console.log('tset12312331')
+            }
+    
+        }
+    }
+    // console.log(res.body);
+    res.send('registered')
+   
+    // res.json(test_rows);
+})
+
+router.get('/event-registered/:eventSid', async(req, res)=>{
+    const eventSid = req.params.eventSid
+    const test_sql = `SELECT COUNT(1) FROM event_registered WHERE event_sid = ${eventSid}`;
     const [test_rows] = await db.query(test_sql);
     res.json(test_rows);
 })
