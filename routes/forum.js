@@ -136,6 +136,18 @@ router.get('/post_cook', async(req,res)=>{
 router.get('/post_official', async(req,res)=>{
     const officialPost = "SELECT * FROM `forum_official_post`";
     const [officialPostRows] = await db.query(officialPost);
+    const forumHashtag = "SELECT * FROM `forum_hashtag` WHERE `categories_sid`=1";
+    const [forumHashtagRows] = await db.query(forumHashtag);
+
+    officialPostRows.forEach(p=>{
+        forumHashtagRows.forEach(i=>{
+                    if(i.post_sid===p.sid){
+                        p.tag ||= [];
+                        p.tag.push(i)
+                    }
+                })
+            })
+    
     res.json({officialPostRows});
 })
 router.get('/post_store', async(req,res)=>{
@@ -166,6 +178,87 @@ router.get('/all_post', async(req,res)=>{
     ]
     res.json(allPostRows);
 })
+
+router.get('/hashTag', async(req,res)=>{
+    const forumHashtag = "SELECT * FROM `forum_hashtag`";
+    const [forumHashtagRows] = await db.query(forumHashtag);
+    
+    res.json({forumHashtagRows});
+})
+
+//收藏
+//商品列表頁抓收藏清單 mb_sid
+router.get('/forum_liked', async (req,res) => {
+    const mb_sid = req.query.mb_sid === undefined ? '0' : req.query.mb_sid
+    let WHERE='WHERE 1'
+    // console.log(mb_sid);
+    if (mb_sid != '0'){
+        WHERE = `WHERE mb_sid=${mb_sid}`}
+        
+    let collect_sql = `SELECT * FROM forum_liked ${WHERE}`
+    // console.log(collect_sql);
+    const [collection_rows] = await db.query(collect_sql)
+    res.json({collection_rows})
+    
+})
+
+//商品細節頁抓收藏清單 food_product_sid
+router.get('/forum_liked/inner',async(req,res)=>{
+    const sid = req.query.sid
+    const collect =
+    "SELECT * FROM `forum_liked` WHERE `categories_sid`=?  WHERE `post_sid`=? ";
+    const format = sqlString.format(collect, [sid])
+    const [rows] = await db.query(format)
+    res.json({rows}) 
+})
+// 新增收藏
+router.get('/addLiked', async (req, res) => {
+
+    const s_sid = req.query.s_sid;
+    const mb_sid = req.query.mb_sid;
+  
+    // 判斷登入
+    if (!mb_sid) res.json({ message: '請先登入', code: '401' });
+  
+    const addLikeSql =
+      "INSERT INTO `forum_liked`(`member_sid`,`categories_sid`, `post_sid`) VALUES (?,?,?)";
+  
+    try {
+      const [addLikeRows] = await db.query(addLikeSql, [s_sid, mb_sid]);
+  
+      res.json(addLikeRows);
+      if (addLikeRows.addLikeSql) {
+        return res.json({ message: 'success', code: '200' });
+      } else {
+        return res.json({ message: 'fail', code: '403' });
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  });
+  
+  // 移除收藏
+  router.get('/delLiked', async (req, res) => {
+  
+    const s_sid = req.query.s_sid;
+    const mb_sid = req.query.mb_sid;
+  
+    const delLikeSql = 'DELETE FROM `forum_liked` WHERE member_sid=? AND   categories_sid=? AND post_sid=?';
+  
+    try {
+      const [delLikeRows] = await db.query(delLikeSql, [s_sid, mb_sid]);
+  
+      res.json(delLikeRows);
+      if (delLikeRows.delLikeSql) {
+        return res.json({ message: 'success', code: '200' });
+      } else {
+        return res.json({ message: 'fail', code: '400' });
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  });
+
 
 //上傳留言
 router.post('/message',upload.none() ,async(req,res)=>{
