@@ -15,6 +15,7 @@ const app = express();
 //     const cookInst = "SELECT *  FROM `forum_instructions`";
 //     const [inst] = await db.query(cookInst);
 
+//     /*
 //     cookInnerRows.forEach(p=>{
 //         inst.forEach(i=>{
 //             if(i.cooking_post_sid===p.sid){
@@ -23,7 +24,8 @@ const app = express();
 //             }
 //         })
 //     })
-//     res.json({cookInnerRows});
+//     */
+//     res.json(cookRows);
 // })
 
 router.get('/cook/inner/:sid', async(req,res)=>{
@@ -42,9 +44,33 @@ router.get('/cook/inner/:sid', async(req,res)=>{
     const comment = `SELECT * FROM forum_comment WHERE categories_sid=4 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
 
-    cookRows.instructions = inst;
-    cookRows.steps = stepRows;
-    cookRows.comment = commentRows;
+// router.get('/store/inner/:sid', async(req,res)=>{
+//     const {sid} = req.params;
+//     const storePost = "SELECT * FROM `store_post`";
+//     const [storePostRows] = await db.query(storePost,[sid]);
+//     const [storeInnerRows] = await db.query(storePost,[sid]);
+//     if(! storeInnerRows.length){
+//         return res.json({ success: false}); 
+//     }
+//     const storeRows = storeInnerRows[0];
+//     const comment = `SELECT * FROM comment WHERE categories_sid=2 AND post_sid=?;`
+//     const [commentRows] = await db.query(comment, [sid]);
+//     storeRows.comment = commentRows;
+//     res.json({storePostRows});
+// })
+// router.get('/share/inner/:sid', async(req,res)=>{
+//     const {sid} = req.params;
+//     const sharePost = "SELECT * FROM `share_post`";
+//     const [shareInnerRows] = await db.query(sharePost,[sid]);
+//     if(! shareInnerRows.length){
+//         return res.json({ success: false}); 
+//     }
+//     const shareRows = shareInnerRows[0];
+//     const comment = `SELECT * FROM comment WHERE categories_sid=3 AND post_sid=?;`
+//     const [commentRows] = await db.query(comment, [sid]);
+//     shareRows.comment = commentRows;
+//     res.json({shareRows});
+// })
 
     /*
     cookInnerRows.forEach(p=>{
@@ -166,55 +192,55 @@ router.post('/message',upload.none() ,async(req,res)=>{
       };
     const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,4,1,?,0,NOW())';
    
-    const [result] = await db.query(messSql,[
-    req.body.content,
-   ]) 
-   if (result.affectedRows) output.success = true;
-   res.json(output);
-})
+//     const [result] = await db.query(messSql,[
+//     req.body.content,
+//    ]) 
+//    if (result.affectedRows) output.success = true;
+//    res.json(output);
+// })
 
 
-//----圖檔上傳
-app.use(fileUpload({
-    createParentPath: true
-}));
-app.use('/uploads', express.static('uploads'));
-app.post('/upload-photos', async (req, res) => {
-    try {
-        if(!req.files) {
-            res.send({
-                status: false,
-                message: 'No file uploaded'
-            });
-        } else {
-            let photoDtat=[]
+// //----圖檔上傳
+// app.use(fileUpload({
+//     createParentPath: true
+// }));
+// app.use('/uploads', express.static('uploads'));
+// app.post('/upload-photos', async (req, res) => {
+//     try {
+//         if(!req.files) {
+//             res.send({
+//                 status: false,
+//                 message: 'No file uploaded'
+//             });
+//         } else {
+//             let photoDtat=[]
             
-           //loop all files
-          _.forEach(_.keysIn(req.files.photos), (key) => {
-            let photo = req.files.photos[key];
+//            //loop all files
+//           _.forEach(_.keysIn(req.files.photos), (key) => {
+//             let photo = req.files.photos[key];
             
-            //move photo to uploads directory
-            photo.mv('./uploads/' + photo.name);
+//             //move photo to uploads directory
+//             photo.mv('./uploads/' + photo.name);
 
-            //push file details
-            photoDtat.push({
-                name: photo.name,
-                mimetype: photo.mimetype,
-                size: photo.size
-            });
-        });
+//             //push file details
+//             photoDtat.push({
+//                 name: photo.name,
+//                 mimetype: photo.mimetype,
+//                 size: photo.size
+//             });
+//         });
 
-        //return response
-        res.json({
-            status: true,
-            message: 'Files are uploaded',
-            data: data
-        });
-    }
-} catch (err) {
-    res.status(500).json(err);
-}
-});
+//         //return response
+//         res.json({
+//             status: true,
+//             message: 'Files are uploaded',
+//             data: data
+//         });
+//     }
+// } catch (err) {
+//     res.status(500).json(err);
+// }
+// });
 
 
 
