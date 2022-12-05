@@ -432,7 +432,7 @@ router.post("/updateAuth", async (req, res) => {
 
 // ====================================
 // 刪除帳號
-router.delete("/deleteAccount/:sid", async (req, res) => {
+router.delete("/deleteAccount", async (req, res) => {
   const output = {
     success: false,
     error: "",

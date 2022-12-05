@@ -58,7 +58,7 @@ router.post("/order-details", async (req, res) => {
 });
 
 // ====================================
-// 我的收藏-商品
+// 我的收藏-商品-讀取收藏
 router.get("/likes-product", async (req, res) => {
   const output = {
     success: false,
@@ -82,4 +82,30 @@ router.get("/likes-product", async (req, res) => {
   res.json(output);
 });
 
+// 我的收藏-商品-移除收藏
+router.delete("/likes-product", async (req, res) => {
+  console.log(req.body);
+  const output = {
+    success: false,
+    error: "",
+  };
+
+  const sql =
+    "DELETE FROM `product_collection` WHERE `mb_sid`=? AND`food_product_sid`=?;";
+
+  const [row] = await db.query(sql, [
+    res.locals.auth.mb_sid,
+    req.body.mbLikePSid,
+  ]);
+
+  // console.log("row", row);
+  // console.log("row.affectedRows", row.affectedRows);
+  // console.log("req.body.mbLikePSid", req.body.mbLikePSid);
+
+  res.json({ success: !!row.affectedRows });
+});
+
+
 module.exports = router;
+
+// DELETE FROM `product_collection` WHERE `mb_sid`=25 AND`food_product_sid`=13;
