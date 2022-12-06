@@ -14,6 +14,8 @@ const corsOptions = {
   },
 };
 
+app.set("view engine", "ejs");
+
 app.use(cors(corsOptions));
 
 app.use(express.json());
@@ -51,11 +53,11 @@ app.use(async (req, res, next) => {
 // routes
 
 // 00-homepage
-app.use('/home', require(__dirname + '/routes/homepage'));
+app.use("/home", require(__dirname + "/routes/homepage"));
 // app.use("/api/seizee", require(__dirname + "/routes/home"));
 
 // 01-cart
-app.use('/cart',require(__dirname + '/routes/cart'));
+app.use("/cart", require(__dirname + "/routes/cart"));
 
 // 02-forum
 // app.use("/forum",require(__dirname + "/routes/forum"));
