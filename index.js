@@ -13,7 +13,7 @@ const corsOptions = {
   },
 };
 
-app.set("view engine", "ejs")
+app.set("view engine", "ejs")     
 
 app.use(cors(corsOptions));
 
