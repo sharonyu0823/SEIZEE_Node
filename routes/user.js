@@ -438,7 +438,6 @@ router.delete("/deleteAccount", async (req, res) => {
     error: "",
   };
 
-  // TODO: 從JWT拿sid 網址sid拿掉
   const sql = "DELETE FROM `member` WHERE `mb_sid`= ?";
   const [result] = await db.query(sql, [res.locals.auth.mb_sid]);
 
