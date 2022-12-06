@@ -288,4 +288,4 @@ function createSignature(uri, linePayBody) {
 module.exports = router;
 
 // 範例參考連結
-// https://github.com/Wcc723/linePaySample
+// https://github.com/Wcc723/linePaySample 
