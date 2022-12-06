@@ -29,8 +29,27 @@ router.get('/info/:sid', async (req, res) => {
     }
 })
 
+// CartItem - 用product_sid帶出其他產品資料
+router.get('/prod/:prodsid', async (req, res) => {
+    const prodsid = req.params.prodsid;
+    const prod_info_sql = `SELECT * FROM food_product 
+    JOIN product_inventory ON food_product.sid = product_inventory.food_product_sid 
+    JOIN product_picture ON food_product.sid = product_picture.food_product_sid
+    WHERE food_product.sid = ${prodsid}`;
+    const [prod_info_rows] = await db.query(prod_info_sql, [
+
+    ])
+    const row = {...prod_info_rows};
+
+    if(row[0]) {
+        res.json({prod_info_rows});
+    } else {
+        res.send('找不到該產品sid對應的資料');
+    }
+})
+
 // CartList - 帶出店家營業、取餐資料
-router.get('/shop/:shopsid', async (req, res) => {
+router.get('/shop/:shopsid', async (req, res) => { 
     const shopsid = req.params.shopsid;
     const shop_info_sql = `SELECT * FROM shop_list 
     JOIN shop_address_city ON shop_list.shop_address_city_sid = shop_address_city.sid 
@@ -48,12 +67,12 @@ router.get('/shop/:shopsid', async (req, res) => {
 })
 
 // CartList - 推薦商品
-router.get('/rec-merch/:prodsid', async (req, res) => {
-    const prodsid = req.params.prodsid;
+router.get('/rec-merch/:shopsid', async (req, res) => {
+    const shopsid = req.params.shopsid;
     const rec_merch_sql = `SELECT * FROM food_product 
     JOIN product_inventory ON food_product.sid = product_inventory.food_product_sid 
     JOIN product_picture ON food_product.sid = product_picture.food_product_sid
-    WHERE shop_list_sid = ${prodsid} 
+    WHERE shop_list_sid = ${shopsid} 
     && product_launch = 1 
     && inventory_qty > 0`;
     const [rec_merch_rows]  = await db.query(rec_merch_sql);
@@ -87,12 +106,37 @@ router.get('/mb/:mbsid', async (req, res) => {
     }
 })
 
-// CartDone - 將付款成功的訂單寫入資料庫（待完成）
+// CartDone - 將付款成功的訂單寫入資料庫
 // 歷史訂單+訂單明細+會員sid+商品列表
-router.get('/add-order/:ordernum', async (req, res) => {
+router.post('/add-order/:ordernum', async (req, res) => {
     const ordernum = req.params.ordernum
-    const create_order_sql = ``;
+    const mb_sid = 256
+    // console.log(ordernum, req.body)
 
+    // INSERT INTO `order_history`(`order_num`, `created_at`, `origin_total`, `total`, `mb_sid`, `order_status_sid`, `order_payment_sid`) VALUES (?, NOW(), ?, ?, ?, ?, ?)
+    const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, shop_sid, origin_total, total, mb_sid) VALUES (?, NOW(), ?, ?, ?, ?)`;
+    const [add_order_history_row] = await db.query(add_order_history_sql, [
+        req.params.ordernum,
+        req.body.userCart[0].shop_sid,
+        req.body.totalUnitPrice,
+        req.body.totalSalePrice,
+        mb_sid
+    ]);
+
+    
+    for(let i =0; i<req.body.userCart.length;i++){
+        const add_order_details_sql = `INSERT INTO order_details (order_num, created_at, product_sid, product_name, quantity, origin_price, total_price) VALUES (?, NOW(), ?, ?, ?, ?, ?)`;
+        const [add_order_details_rows] = await db.query(add_order_details_sql,[
+            req.params.ordernum,
+            req.body.userCart[i].prod_sid,
+            req.body.userCart[i].name,
+            req.body.userCart[i].amount,
+            (req.body.userCart[i].unit_price * req.body.userCart[i].amount),
+            (req.body.userCart[i].sale_price * req.body.userCart[i].amount),
+        ])
+    } 
+
+    res.send('訂單成功寫入資料庫')
 })
 
 
@@ -105,7 +149,7 @@ router.get('/payment-done/:mbsid', async (req, res) => {
     JOIN order_details ON order_history.order_num = order_details.order_num 
     JOIN order_status ON order_history.order_status_sid = order_status.sid 
     JOIN order_payment ON order_history.order_payment_sid = order_payment.sid 
-    WHERE order_history.member_sid = 2 
+    WHERE order_history.mb_sid = 2 
     ORDER BY order_history.created_at DESC`;
     const [this_order_details_rows] = await db.query(this_order_details_sql);
     const row =  { ...this_order_details_rows}; 
