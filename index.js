@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const moment = require("moment-timezone");
 
 // top-level middleware
 const corsOptions = {
@@ -13,11 +14,17 @@ const corsOptions = {
   },
 };
 
+app.set("view engine", "ejs")     
+
 app.use(cors(corsOptions));
 
 app.use(express.json());
 
 app.use(async (req, res, next) => {
+  // DateTime
+  res.locals.toDatetimeString = (d) => moment(d).format("YYYY-MM-DD  HH:mm:ss");
+
+  // JWT auth
   res.locals.auth = {}; // 預設值
   let auth = req.get("Authorization");
   // console.log("req.:", req.path);
@@ -46,30 +53,30 @@ app.use(async (req, res, next) => {
 // routes
 
 // 00-homepage
-app.use('/home', require(__dirname + '/routes/homepage'));
+app.use("/home", require(__dirname + "/routes/homepage"));
 // app.use("/api/seizee", require(__dirname + "/routes/home"));
 
 // 01-cart
-app.use('/cart',require(__dirname + '/routes/cart'));
+app.use("/cart", require(__dirname + "/routes/cart"));
 
 // 02-forum
-// app.use("/forum",require(__dirname + "/routes/forum"));
+app.use("/forum",require(__dirname + "/routes/forum"));
 
 // 03-shop
-// app.use("/api/shop", require(__dirname + "/routes/shop"));
+app.use("/api/shop", require(__dirname + "/routes/shop"));
 
 // 04-product
 app.use("/product", require(__dirname + "/routes/product"));
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
+app.use("/user-search", require(__dirname + "/routes/user_others"));
 
 // 06-event
-// app.use("/event", require(__dirname + "/routes/event"));
+app.use("/event", require(__dirname + "/routes/event"));
 
 // 環境設定
 app.use(express.static("public"));
-
 const port = process.env.SERVER_PORT || 3002;
 app.listen(port, () => {
   console.log("server started, server port: ", port);

@@ -14,7 +14,7 @@ const fileFilter = (req, file, callback) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, __dirname + "/../public/uploads/05-member");
+    cb(null, __dirname + "/../public/uploads/02-forum");
   },
   filename: (req, file, cb) => {
     // console.log('aaa:', file)
@@ -22,5 +22,7 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
+
+
 
 module.exports = multer({ storage, fileFilter });

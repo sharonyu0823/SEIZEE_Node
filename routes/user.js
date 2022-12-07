@@ -271,15 +271,15 @@ router.put("/updatePass", async (req, res) => {
     error: "",
   };
 
-  console.log(req.body);
-
-  // TODO: 更換密碼適用uuid判斷
+  // console.log(req.body);
 
   const sql =
     "UPDATE `member` SET `mb_pass`=?, `mb_forget_pass`=? WHERE `mb_sid` = ?";
 
+  const encryptedPass = await bcrypt.hash(req.body.mbResetPass, 10);
+
   const [result] = await db.query(sql, [
-    req.body.mbResetPass,
+    encryptedPass,
     null,
     res.locals.auth.mb_sid,
   ]);
@@ -302,8 +302,6 @@ router.get("/profile", async (req, res) => {
   // if(res.locals.auth.account) {
   // return
   // }
-
-  // TODO: 從JWT拿sid 網址sid拿掉
 
   const sql = "SELECT * FROM `member` WHERE `mb_sid` = ?";
   const [row] = await db.query(sql, [res.locals.auth.mb_sid]);
@@ -328,8 +326,6 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     error: "",
   };
 
-  // TODO: 從JWT拿sid 網址sid拿掉
-
   if (!!req.file) {
     const sql =
       "UPDATE `member` SET `mb_photo`=?,`mb_gender`=?,`mb_address_city`=?,`mb_address_area`=?,`mb_address_detail`=?,`mb_phone`=? WHERE `mb_sid`= ?";
@@ -349,7 +345,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新1";
+      output.error = "沒有更新";
     }
   } else {
     const sql1 =
@@ -369,7 +365,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
     if (result.changedRows) {
       output.success = true;
     } else {
-      output.error = "沒有更新2";
+      output.error = "沒有更新";
     }
   }
 
@@ -436,7 +432,7 @@ router.post("/updateAuth", async (req, res) => {
 
 // ====================================
 // 刪除帳號
-router.delete("/deleteAccount/:sid", async (req, res) => {
+router.delete("/deleteAccount", async (req, res) => {
   const output = {
     success: false,
     error: "",
