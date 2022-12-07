@@ -1,6 +1,11 @@
+.gitignore
 node_modules
 package-lock.json
 .env
 
 public/uploads/*/*
 public/images/*/*
+
+.vscode
+yarn.lock
+package.json
