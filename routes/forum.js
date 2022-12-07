@@ -43,7 +43,7 @@ router.get('/cook/inner/:sid', async(req,res)=>{
 
     const step = `SELECT * FROM forum_step WHERE cooking_post_sid=?`
     const [stepRows] = await db.query(step, [sid]);
-    const comment = `SELECT * FROM forum_comment WHERE categories_sid=4 AND post_sid=?;`
+    const comment = `SELECT forum_comment.* , member.mb_photo , member.mb_name , member.mb_email FROM forum_comment JOIN member ON forum_comment.member_sid = member.mb_sid WHERE categories_sid=4 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
 
     cookRows.instructions = inst;
@@ -77,7 +77,7 @@ router.get('/store/inner/:sid', async(req,res)=>{
         return res.json({ success: false}); 
     }
     const storeRows = storeInnerRows[0];
-    const comment = `SELECT * FROM forum_comment WHERE categories_sid=2 AND post_sid=?;`
+    const comment = `SELECT * FROM forum_comment  WHERE categories_sid=2 AND post_sid=?;`
     const [commentRows] = await db.query(comment, [sid]);
     storeRows.comment = commentRows;
     res.json(storeRows);
@@ -185,12 +185,12 @@ router.get('/all_post', async(req,res)=>{
     res.json(allPostRows);
 })
 
-router.get('/hashTag', async(req,res)=>{
-    const forumHashtag = "SELECT * FROM `forum_hashtag`";
-    const [forumHashtagRows] = await db.query(forumHashtag);
+// router.get('/hashTag', async(req,res)=>{
+//     const forumHashtag = "SELECT * FROM `forum_hashtag`";
+//     const [forumHashtagRows] = await db.query(forumHashtag);
     
-    res.json({forumHashtagRows});
-})
+//     res.json({forumHashtagRows});
+// })
 
 //收藏
 router.get('/forum_toggle', async (req,res) => {
@@ -317,7 +317,7 @@ router.post('/message',upload.none() ,async(req,res)=>{
         error: {},
         postData: req.body, // 除錯用
       };
-    const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (1,?,?,?,0,NOW())';
+    const messSql =  'INSERT INTO `forum_comment`(`member_sid`, `categories_sid`, `post_sid`, `content`, `parent_sid`, `created_at`) VALUES (?,?,?,?,0,NOW())';
    console.log("req.body",req.body);
 
     const [result] = await db.query(messSql,[
