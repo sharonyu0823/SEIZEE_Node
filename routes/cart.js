@@ -108,19 +108,27 @@ router.get('/rec-merch/:shopsid', async (req, res) => {
 
 // CartInfo - 代入會員資料、店家資料
 // 店家資料部分跟 CartList 共用同個 router
-router.get('/mb/:mbsid', async (req, res) => {
-    const mbsid = req.params.mbsid
+router.get('/add-save/', async (req, res) => {
+    // const mbsid = req.params.mbsid
+    const mbsid = req.query.mbsid? +req.query.mbsid: 0;
+    const prodsid = req.query.prodsid? +req.query.prodsid: 0;
 
-    const member_info_sql = `SELECT * FROM member WHERE mb_sid = ${mbsid}`;
-    const [member_info_rows]  = await db.query(member_info_sql);
-    const row = {...member_info_rows}
-    // console.log(row); 
+    console.log(mbsid, prodsid); 
 
-    if(row[0]) {
-        // console.log(row[0].member_nickname);
-        res.json({member_info_rows});
+    if(!mbsid || !prodsid) return res.json({success: false});
+
+    const check_save_sql = `SELECT * FROM product_collection WHERE food_product_sid = ? AND mb_sid = ?`;
+    const [check_save_rows]  = await db.query(check_save_sql, [prodsid, mbsid]);
+    // const row = {...check_save_rows};
+    // res.json(row);
+
+    if(check_save_rows.length) {
+        res.json({success: true, msg:'已在收藏列表當中'});
     } else {
-        res.send('這個sid沒有對應的會員資料');
+        const add_save_sql = `
+        INSERT INTO product_collection(food_product_sid, mb_sid) VALUES (?,?)`;
+        const [add_save_rows] = await db.query(add_save_sql, [prodsid, mbsid]);
+        res.json({success: true, msg:'成功加入收藏列表'});
     }
 })
 
@@ -131,8 +139,6 @@ router.post('/add-order/:ordernum', async (req, res) => {
     const ordernum = req.params.ordernum
     const mb_sid = 256
     // console.log(ordernum, req.body)
-
-    // INSERT INTO `order_history`(`order_num`, `created_at`, `origin_total`, `total`, `mb_sid`, `order_status_sid`, `order_payment_sid`) VALUES (?, NOW(), ?, ?, ?, ?, ?)
     try {
         const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, shop_sid, origin_total, total, mb_sid) VALUES (?, NOW(), ?, ?, ?, ?)`;
         const [add_order_history_row] = await db.query(add_order_history_sql, [
@@ -195,48 +201,60 @@ router.get('/payment-done/:mbsid', async (req, res) => {
 })
 
 // LINE Pay 部分
+router
+.get('/', (req, res) => {
+    res.render('index', { title: 'Express' });
+})
 // 前端頁面
-router.get('/checkout/:id', (req, res) => {
+.get('/checkout/:id', (req, res) => {
     const { id } = req.params;
-    const order = sampleData[id];
-    // order.orderId = parseInt(new Date().getTime() / 1000);
-    order.orderId = dayjs(new Date()).format('YYYYMMDDHHmmss');
-    // console.log(order.orderId);
-    orders[order.orderId] = order;
-    
+    const order = JSON.parse(JSON.stringify(sampleOrders[id]));
+    order.id = dayjs(new Date()).format('YYYYMMDDHHmmss');
+    orders[order.id] = order;
+
     res.render('checkout', { order });
-  })
+})
+.get('/success/:id', (req, res) => {
+    const { id } = req.params;
+    const order = orders[id];
+
+    res.render('success', { order });
+})
+
 
 // 跟 LINE PAY 串接的 API
-router.post('/createOrder/:orderId', async (req, res) => {
-    const {orderId } = req.params;
-    const order = orders[orderId];
-  
-    console.log('createOrder', order);
+router.post('/linePay/:orderId', async (req, res) => {
+    const {orderNo } = req.params;
+    const order = orders[orderNo];
+    // console.log('create-order', order);
   
     try {
-      const linePayBody = {
-        ...order, 
-        redirectUrls: {
-          confirmUrl:`${LINEPAY_RETURN_HOST}${LINEPAY_RETURN_CONFIRM_URL}`,
-          cancelUrl: `${LINEPAY_RETURN_HOST}${LINEPAY_RETURN_CANCEL_URL}`,
-        }
-      }
+      // 建立 LINE Pay 請求規定的資料格式
+      const linePayBody = createLinePayBody(order)
+
+      // CreateSignature 建立加密內容
       const uri = '/payments/request';
-      const { signature, headers } = createSignature(uri, linePayBody);
-    
+      const headers = createSignature(uri, linePayBody);
     
       // 準備送給 LINE Pay 的資訊
       console.log(linePayBody, signature);
+
+      // API 位址
       const url = `${LINEPAY_SITE}/${LINEPAY_VERSION}${uri}`;
     
-      const linePayRes = await axios.post(url, linePayBody, { headers });
-      console.log(linePayRes.data.info);
+      // const linePayRes = await axios.post(url, linePayBody, { headers });
+      // console.log(linePayRes.data.info);
+
       if(linePayRes?.data?.returnCode === '0000') {
         res.redirect(linePayRes?.data?.info.paymentUrl.web);
-      }
+      } else {
+        res.status(400).send({
+          message: '訂單不存在',
+          });
+        }
     }
     catch(error) {
+      // 各種運行錯誤的狀態：可進行任何的錯誤處理
       console.log(error.message);
       res.end();
     }
@@ -245,23 +263,32 @@ router.post('/createOrder/:orderId', async (req, res) => {
 // 本地端頁面
 .get('/linePay/confirm', async (req, res) => {
     const {transactionId, orderId} = req.query;
-    // console.log(transactionId, orderId);
-  
+    const order = orders[orderId];
+
     try {
-      const order = orders[orderId];
-  
+    // 建立 LINE Pay 請求規定的資料格式
+    const uri = `/payments/${transactionId}/confirm`
     const linePayBody = {
       amount: order.amount, 
       currency: 'TWD'
     };
-    const uri = `/payments/${transactionId}/confirm`
+    
+    // CreateSignature 建立加密內容
     const headers = createSignature(uri, linePayBody);
-  
+
+    // API 位址
     const url = `${LINEPAY_SITE}/${LINEPAY_VERSION}${uri}`;
-    const linePayRes = await axios.post(url, linePayBody, {headers});
-  
+    const linePayRes = await axios.post(url, linePayBody, { headers });
     console.log(linePayRes);
-    res.end();
+
+    // 請求成功...
+    if (linePayRes?.data?.returnCode === '0000') {
+        res.redirect(`/success/${orderId}`)
+      } else {
+        res.status(400).send({
+          message: linePayRes,
+        });
+      }
   
     } catch(error) {
       console.log(error.message);
@@ -270,19 +297,32 @@ router.post('/createOrder/:orderId', async (req, res) => {
     res.end();
   })
   
+function createLinePayBody(order) {
+    return {
+        ...order,
+        currency: 'TWD',
+        redirectUrls: {
+            confirmUrl: `${LINEPAY_RETURN_HOST}${LINEPAY_RETURN_CONFIRM_URL}`,
+            cancelUrl: `${LINEPAY_RETURN_HOST}${LINEPAY_RETURN_CANCEL_URL}`,
+          },
+    }
+}
+
 function createSignature(uri, linePayBody) {
     const nonce = parseInt(new Date().getTime() / 1000);
-    const string = `${LINEPAY_CHANNEL_SECRET_KEY}/${LINEPAY_VERSION}${uri}${JSON.stringify(linePayBody)}${nonce}`;
-  
-    const signature = Base64.stringify(HmacSHA256(string, LINEPAY_CHANNEL_SECRET_KEY));
+
+    const encrypt = HmacSHA256(`${LINEPAY_CHANNEL_SECRET_KEY}/${LINEPAY_VERSION}${uri}${JSON.stringify(linePayBody)}${nonce}`, LINEPAY_CHANNEL_SECRET_KEY)
+
+    const signature = Base64.stringify(encrypt);
     // console.log(signature);
+    
     const headers = {
       'Content-Type': 'application/json',
       'X-LINE-ChannelId': LINEPAY_CHANNEL_ID,
       'X-LINE-Authorization-Nonce': nonce,
       'X-LINE-Authorization': signature,
     };
-    return { signature, headers };
+    return { headers };
 }
 
 module.exports = router;
