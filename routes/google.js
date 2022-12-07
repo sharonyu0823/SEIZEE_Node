@@ -42,6 +42,10 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/callback", async (req, res) => {
+  const output = {
+    success: false,
+    error: "",
+  };
   // qs 內容參考 /references/redirect-query-string.json
   const qs = req.query;
   let myData = {};
@@ -65,7 +69,7 @@ router.get("/callback", async (req, res) => {
     myData = response.data;
   }
 
-  res.render("callback", { title: "Callback result", qs, myData });
+  //   res.render("callback", { title: "Callback result", qs, myData });
 });
 
 module.exports = router;
