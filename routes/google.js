@@ -9,7 +9,7 @@ const keys = require(__dirname + "/../client_secret.json");
 const oAuth2c = new OAuth2Client(
   keys.web.client_id,
   keys.web.client_secret,
-  keys.web.redirect_uris[0]
+  keys.web.redirect_uris[2]
   // 測試, http://localhost:3000/callback
 );
 
@@ -28,6 +28,7 @@ router.get("/", async (req, res) => {
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/userinfo.email",
     ],
+    // prompt: "consent",
   });
 
   // console.log("authorizeUrl", authorizeUrl);
@@ -50,26 +51,43 @@ router.get("/callback", async (req, res) => {
   const qs = req.query;
   let myData = {};
 
+  console.log("qs1", qs);
+  console.log("qs1.code", qs.code);
+  console.log("myData1", myData);
+
   if (qs.code) {
     // 內容參考 /references/from-code-to-tokens.json
     const r = await oAuth2c.getToken(qs.code);
     // console.log(JSON.stringify(r, null, 2));
     oAuth2c.setCredentials(r.tokens);
 
+    console.log("r", r);
+
     // 連線回應內容參考 /references/tokeninfo-results-oauth2.googleapis.com.json
     console.log(
+      "token",
       `https://oauth2.googleapis.com/tokeninfo?id_token=${r.tokens.id_token}`
     );
 
     const url =
-      "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,photos";
+      "https://people.googleapis.com/v1/people/me?personFields=names%2CemailAddresses%2Cphotos";
 
     const response = await oAuth2c.request({ url });
+
+    console.log("response", response);
     // response 內容參考 /references/people-api-response.json
     myData = response.data;
   }
 
   //   res.render("callback", { title: "Callback result", qs, myData });
+
+  console.log("qs2", qs);
+  console.log("qs1.code", qs.code);
+  console.log("myData2", myData);
+
+  output.success = true;
+
+  res.json(output);
 });
 
 module.exports = router;
