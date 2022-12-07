@@ -25,7 +25,7 @@ router.get("/list", async (req, res) => {
   if (whereCondition != "") whereCondition = " WHERE " + whereCondition;
   // console.log(whereCondition);
   let product_sql =
-    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
+    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
     "FROM food_product " +
     "LEFT JOIN shop_list on `shop_list`.sid = shop_list_sid " +
     "LEFT JOIN `product_picture` on `product_picture`.sid = (SELECT `product_picture`.sid FROM `product_picture` WHERE `product_picture`.sid =`food_product`.sid ORDER BY `product_picture`.sid LIMIT 1) " +
@@ -35,7 +35,7 @@ router.get("/list", async (req, res) => {
     "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
     "LEFT JOIN `product_rating` on product_rating.food_product_sid=`food_product`.`sid` " +
     whereCondition +
-    " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
+    " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
     " ORDER BY `product_category_sid`, `food_product`.`sid` ";
   // console.log(product_sql);
   // return product_sql;
@@ -72,7 +72,7 @@ router.get("/suggest", async (req, res) => {
     ") " +
     "AND `food_product`.sid <> " +
     food_product_sid +
-    " order by r ";
+    " order by r limit 6 ";
   //  console.log(suggest_sql);
   // return suggest_sql;
   const [suggest_rows] = await db.query(suggest_sql);
@@ -189,30 +189,30 @@ router.post("/productFilter", async (req, res) => {
     filter += " WHERE `product_category_sid` IN (" + req.body.categories + ") ";
   }
 
-  if (req.body.fiftyPercentOff !== undefined) {
-    if (filter !== "") filter += " and ";
-    else filter = " Where ";
-    filter += " sale_price <= 5 ";
+  if (req.body.fiftyPercentOff) {
+    // if (filter !== "") filter += " and ";
+    // else filter = " Where ";
+    filter += " AND sale_price <= 5 ";
   }
   // if (req.body.invUnder5 !== undefined) {
   //   if (filter !== "") filter += " and ";
   //   else filter = " Where ";
   //   filter += " qty <= 5 ";
   // }
-  if (req.body.priceUnder50 !== undefined) {
-    if (filter !== "") filter += " and ";
-    else filter = " Where ";
-    filter += " product_price <= 50 ";
+  if (req.body.priceUnder50) {
+    // if (filter !== "") filter += " and ";
+    // else filter = " Where ";
+    filter += " AND product_price <= 50 ";
   }
-  if (req.body.priceOver100 !== undefined) {
-    if (filter !== "") filter += " and ";
-    else filter = " Where ";
-    filter += " product_price >= 100 ";
+  if (req.body.priceOver100) {
+    // if (filter !== "") filter += " and ";
+    // else filter = " Where ";
+    filter += " AND product_price >= 100 ";
   }
-  if (req.body.ratingOver4 !== undefined) {
-    if (filter !== "") filter += " and ";
-    else filter = " Where ";
-    filter += " rating >= 4 ";
+  if (req.body.ratingOver4) {
+    // if (filter !== "") filter += " and ";
+    // else filter = " Where ";
+    filter += " AND rating >= 4 ";
   }
 
   let category =
@@ -230,7 +230,8 @@ router.post("/productFilter", async (req, res) => {
 
   const [filter_rows] = await db.query(category);
   // console.log(category);
-  console.log(filter_rows);
+  // console.log(filter_rows);
+  // console.log('productFilter - ' + category);
   res.json({ filter_rows });
 });
 
