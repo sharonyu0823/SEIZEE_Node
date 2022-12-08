@@ -47,6 +47,7 @@ router.get("/callback", async (req, res) => {
     success: false,
     error: "",
   };
+
   // qs 內容參考 /references/redirect-query-string.json
   const qs = req.query;
   let myData = {};
