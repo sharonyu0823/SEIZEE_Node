@@ -30,7 +30,7 @@ router.post("/register", async (req, res) => {
       const sql =
         "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
 
-      // console.log(req.body)
+      console.log(req.body)
 
       const encryptedPass = await bcrypt.hash(req.body.mbrPass, 10);
       // console.log(encryptedPass);
@@ -40,11 +40,11 @@ router.post("/register", async (req, res) => {
         req.body.mbrName,
         req.body.mbrEmail,
         encryptedPass,
-        req.body.mbuGender,
-        req.body.mbuAddressCity,
-        req.body.mbuAddressArea,
-        req.body.mbuAddressDetail,
-        req.body.mbuPhone,
+        req.body.mbrGender,
+        req.body.mbrAddressCity,
+        req.body.mbrAddressArea,
+        req.body.mbrAddressDetail,
+        req.body.mbrPhone,
       ]);
 
       if (result.affectedRows) output.success = true;
@@ -370,7 +370,7 @@ router.put("/profile", upload.single("mb_photo"), async (req, res) => {
   }
 
   // console.log(result.changedRows);
-  // console.log(req.body.mbuPhoto);
+  // console.log(req.body.mbrPhoto);
   // console.log(req.file);
   // console.log(req.file.originalname);
   // console.log(req.file);
