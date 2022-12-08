@@ -75,117 +75,126 @@ router.get("/callback", async (req, res) => {
     const response = await oAuth2c.request({ url });
 
     // console.log("oAuth2c response", response);
-    // return res.json({ success: true, data: response.data });
+    return res.json({ success: true, data: response.data });
     // response 內容參考 /references/people-api-response.json
     myData = response.data;
+
+    const { names, photos, emailAddresses } = myData;
+
+    console.log("qs2", qs);
+    console.log("qs1.code", qs.code);
+    console.log("myData2", myData);
+    console.log("myData2, name", names[0].displayName);
+    console.log("myData2, photo", photos[0].url);
+    console.log("myData2, email", emailAddresses[0].value);
   }
 
-  const { names, photos, emailAddresses } = myData;
+  // const { names, photos, emailAddresses } = myData;
 
-  console.log("qs2", qs);
-  console.log("qs1.code", qs.code);
-  console.log("myData2", myData);
-  console.log("myData2, name", names[0].displayName);
-  console.log("myData2, photo", photos[0].url);
-  console.log("myData2, email", emailAddresses[0].value);
+  // console.log("qs2", qs);
+  // console.log("qs1.code", qs.code);
+  // console.log("myData2", myData);
+  // console.log("myData2, name", names[0].displayName);
+  // console.log("myData2, photo", photos[0].url);
+  // console.log("myData2, email", emailAddresses[0].value);
 
-  const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
-  const [result] = await db.query(sql, [emailAddresses[0].value]);
+  // const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
+  // const [result] = await db.query(sql, [emailAddresses[0].value]);
 
-  console.log("3");
+  // console.log("3");
 
-  if (result.length === 1) {
-    const row = result[0];
+  // if (result.length === 1) {
+  //   const row = result[0];
 
-    // JWT
-    const { mb_sid, mb_photo, mb_name, mb_email } = row;
-    // console.log(row);
-    const token = jwt.sign(
-      {
-        mb_sid,
-        mb_photo,
-        mb_name,
-        mb_email,
-      },
-      process.env.JWT_SECRET
-    );
-    // console.log(row);
-    // console.log("token", token);
+  //   // JWT
+  //   const { mb_sid, mb_photo, mb_name, mb_email } = row;
+  //   // console.log(row);
+  //   const token = jwt.sign(
+  //     {
+  //       mb_sid,
+  //       mb_photo,
+  //       mb_name,
+  //       mb_email,
+  //     },
+  //     process.env.JWT_SECRET
+  //   );
+  //   // console.log(row);
+  //   // console.log("token", token);
 
-    output.auth = {
-      mb_sid,
-      mb_photo,
-      mb_name,
-      mb_email,
-      token,
-    };
+  //   output.auth = {
+  //     mb_sid,
+  //     mb_photo,
+  //     mb_name,
+  //     mb_email,
+  //     token,
+  //   };
 
-    // console.log("result: ", result);
-    // console.log("result.length: ", result.length);
-    // output.success = false;
-    // output.error = "帳號重覆";
+  //   // console.log("result: ", result);
+  //   // console.log("result.length: ", result.length);
+  //   // output.success = false;
+  //   // output.error = "帳號重覆";
 
-    console.log("1");
-  } else {
-    try {
-      const sql =
-        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
+  //   console.log("1");
+  // } else {
+  //   try {
+  //     const sql =
+  //       "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
 
-      console.log("2");
+  //     console.log("2");
 
-      // console.log(req.body)
+  //     // console.log(req.body)
 
-      // console.log(encryptedPass);
+  //     // console.log(encryptedPass);
 
-      const [result] = await db.query(sql, [
-        "noname.png",
-        names[0].displayName,
-        emailAddresses[0].value,
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-      ]);
+  //     const [result] = await db.query(sql, [
+  //       "noname.png",
+  //       names[0].displayName,
+  //       emailAddresses[0].value,
+  //       "",
+  //       "",
+  //       "",
+  //       "",
+  //       "",
+  //       "",
+  //     ]);
 
-      if (result.affectedRows) {
-        const row = result[0];
+  //     if (result.affectedRows) {
+  //       const row = result[0];
 
-        // JWT
-        const { mb_sid, mb_photo, mb_name, mb_email } = row;
-        // console.log(row);
-        const token = jwt.sign(
-          {
-            mb_sid,
-            mb_photo,
-            mb_name,
-            mb_email,
-          },
-          process.env.JWT_SECRET
-        );
-        // console.log(row);
-        // console.log("token", token);
+  //       // JWT
+  //       const { mb_sid, mb_photo, mb_name, mb_email } = row;
+  //       // console.log(row);
+  //       const token = jwt.sign(
+  //         {
+  //           mb_sid,
+  //           mb_photo,
+  //           mb_name,
+  //           mb_email,
+  //         },
+  //         process.env.JWT_SECRET
+  //       );
+  //       // console.log(row);
+  //       // console.log("token", token);
 
-        output.auth = {
-          mb_sid,
-          mb_photo,
-          mb_name,
-          mb_email,
-          token,
-        };
+  //       output.auth = {
+  //         mb_sid,
+  //         mb_photo,
+  //         mb_name,
+  //         mb_email,
+  //         token,
+  //       };
 
-        output.success = true;
-      }
-    } catch (e) {
-      output.success = false;
-      output.error = "發生錯誤";
+  //       output.success = true;
+  //     }
+  //   } catch (e) {
+  //     output.success = false;
+  //     output.error = "發生錯誤";
 
-      console.log(e);
+  //     console.log(e);
 
-      console.log("4");
-    }
-  }
+  //     console.log("4");
+  //   }
+  // }
 
   // output.success = true;
 
