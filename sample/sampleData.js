@@ -4,7 +4,7 @@ const orders = {
       currency: 'TWD',
       packages: [
         {
-          id: 'seizeeProducts',
+          id: '1',
           amount: 277,
           products: [
             {
