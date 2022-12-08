@@ -33,7 +33,7 @@ router.get("/list", async (req, res) => {
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
     "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
-    "LEFT JOIN `product_rating` on product_rating.food_product_sid=`food_product`.`sid` " +
+    "LEFT JOIN `product_comment` on product_comment.food_product_sid=`food_product`.`sid` " +
     whereCondition +
     " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
     " ORDER BY `product_category_sid`, `food_product`.`sid` ";
@@ -135,7 +135,6 @@ router.get("/picture", async (req, res) => {
   const product_picture_sid = req.query.product_picture_sid;
   const picture_sql =
     "SELECT `food_product`.sid, `shop_list_sid`, group_concat (picture_url) AS picture FROM `food_product` " +
-    // "LEFT JOIN `product_category` ON `product_category`.sid = `product_category_sid`" +
     "LEFT JOIN `product_picture` ON `food_product_sid`= `food_product`.sid " +
     "WHERE `food_product`.sid = ? " +
     "GROUP BY food_product.sid, `shop_list_sid` ";
@@ -152,14 +151,6 @@ router.post("/comment", upload.none(), async (req, res) => {
   if (!food_product_sid || !mb_sid || !comment) {
     return res.json({ success: false });
   }
-  /*
-  const comment = {
-    success: false,
-    code: 0,
-    error: {},
-    poseData: req.body, //除錯用
-  };
-*/
   const commentsql =
     "INSERT INTO `product_comment`( `food_product_sid`, `mb_sid`, `user_comment`, `rating`, `created_at`) VALUES (?,?,?,?,NOW()) ";
 
@@ -174,18 +165,12 @@ router.post("/comment", upload.none(), async (req, res) => {
   res.json({ result, success: true });
 });
 
-
-
 // 抓評分數和留言
 router.get("/userComment/:sid", async (req, res) => {
   const food_product_sid = req.params.sid;
   const sql =
     "SELECT c.* , m.`mb_photo`, m.`mb_name` FROM `product_comment` c JOIN `member` m ON c.`mb_sid`=m.mb_sid WHERE c.food_product_sid = ? ";
-
-  // const product_sid = req.query.food_product_sid;
-  // "SELECT * FROM `product_rating` WHERE food_product_sid = ? "
   const [rows] = await db.query(sql, [food_product_sid])
-  
   res.json(rows);
 });
 
@@ -201,43 +186,30 @@ router.post("/productFilter", async (req, res) => {
   }
 
   if (req.body.fiftyPercentOff) {
-    // if (filter !== "") filter += " and ";
-    // else filter = " Where ";
     filter += " AND sale_price <= 5 ";
   }
-  // if (req.body.invUnder5 !== undefined) {
-  //   if (filter !== "") filter += " and ";
-  //   else filter = " Where ";
-  //   filter += " qty <= 5 ";
-  // }
   if (req.body.priceUnder50) {
-    // if (filter !== "") filter += " and ";
-    // else filter = " Where ";
     filter += " AND product_price <= 50 ";
   }
   if (req.body.priceOver100) {
-    // if (filter !== "") filter += " and ";
-    // else filter = " Where ";
     filter += " AND product_price >= 100 ";
   }
   if (req.body.ratingOver4) {
-    // if (filter !== "") filter += " and ";
-    // else filter = " Where ";
     filter += " AND rating >= 4 ";
   }
 
   let category =
-    "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
+    "SELECT `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
     "LEFT JOIN `product_picture` ON `product_picture`.sid =( SELECT `product_picture`.sid FROM `product_picture` " +
     "WHERE `food_product_sid`= `food_product`.sid " +
     "ORDER BY `product_picture`.sid " +
     "LIMIT 1 ) " +
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
-    "LEFT JOIN product_rating on product_rating.food_product_sid = food_product.sid " +
+    "LEFT JOIN product_comment on product_comment.food_product_sid = food_product.sid " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
     "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
     filter +
-    " GROUP BY `food_product`.sid, `picture_url`, `product_name`, `product_price`,`sale_price`, `product_description`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end ";
+    " GROUP BY `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end ";
 
   const [filter_rows] = await db.query(category);
   // console.log(category);
@@ -253,20 +225,20 @@ router.get("/category", async (req, res) => {
   let category = "SELECT * FROM `product_category`";
   if (category_sid && category_sid.length) {
     category =
-      "SELECT `food_product`.sid, `picture_url`, `product_name`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
+      "SELECT `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
       "LEFT JOIN `product_picture` ON `product_picture`.sid =( SELECT `product_picture`.sid FROM `product_picture` " +
       "WHERE `food_product_sid`= `food_product`.sid " +
       "ORDER BY `product_picture`.sid " +
       "LIMIT 1 ) " +
       "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
-      "LEFT JOIN product_rating on product_rating.food_product_sid = food_product.sid " +
+      "LEFT JOIN product_comment on product_comment.food_product_sid = food_product.sid " +
       "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
       "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid`";
     if (category_sid && category_sid.length) {
       category += " WHERE `product_category_sid` IN (" + category_sid + ") ";
     }
     category +=
-      " GROUP BY `food_product`.sid, `picture_url`, `product_name`, `product_price`,`sale_price`, `product_description`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end ";
+      " GROUP BY `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end ";
   }
   const [category_rows] = await db.query(category);
   // console.log(category_rows);
