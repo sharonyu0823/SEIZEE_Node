@@ -61,12 +61,19 @@ router.get("/official-posts", async (req, res) => {
 });
 
 //活動 banner資料列表
-
 router.get("/event-banner", async (req, res) => {
   const event_sql = "SELECT * FROM `event_all` ORDER BY `sid` DESC";
   const [eventRows] = await db.query(event_sql);
 
   res.json({ eventRows });
+});
+
+//隨機扭蛋推薦
+router.get("/ganchapon", async (req, res) => {
+  const egg_sql = "SELECT * FROM `food_product` ORDER BY RAND() LIMIT 1";
+  const [eggRows] = await db.query(egg_sql);
+
+  res.json({ eggRows });
 });
 
 module.exports = router;
