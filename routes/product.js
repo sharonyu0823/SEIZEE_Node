@@ -41,19 +41,19 @@ router.get("/list", async (req, res) => {
   // return product_sql;
   const [product_rows] = await db.query(product_sql);
 
-  // let shop = null;
-  // if(product_rows.length){
-  //     const shop_list_sid = product_rows[0].shop_list_sid;
-  //     const sql = `SELECT * FROM shop_list WHERE sid =?`
-  //     const [shop_data] = await db.query(sql, [shop_list_sid]);
-  //     console.log(shop_data);
+  let shop = null;
+  if (product_rows.length) {
+    const shop_list_sid = product_rows[0].shop_list_sid;
+    const sql = `SELECT * FROM shop_list WHERE sid =?`;
+    const [shop_data] = await db.query(sql, [shop_list_sid]);
+    console.log(shop_data);
 
-  //     if(shop_data.length){
-  //         shop = shop_data[0];
-  //     }
-  // }
-  // res.json({product_rows, shop})
-  res.json({ product_rows });
+    if (shop_data.length) {
+      shop = shop_data[0];
+    }
+  }
+  res.json({ product_rows, shop });
+  // res.json({ product_rows });
 });
 
 //隨機推薦相關產品
@@ -147,38 +147,49 @@ router.get("/picture", async (req, res) => {
 
 //商品留言+評分
 router.post("/comment", upload.none(), async (req, res) => {
+  const { food_product_sid, mb_sid, comment, rating } = req.body;
+
+  if (!food_product_sid || !mb_sid || !comment) {
+    return res.json({ success: false });
+  }
+  /*
   const comment = {
     success: false,
     code: 0,
     error: {},
     poseData: req.body, //除錯用
   };
-  const ratesql =
-    "INSERT INTO `product_rating`( `food_product_sid`, `mb_sid`, `rating`, `created_at`) VALUES (?,?,?,NOW()) ";
+*/
   const commentsql =
-    "INSERT INTO `product_comment`( `food_product_sid`, `mb_sid`, `user_comment`, `created_at`) VALUES (?,?,?,NOW()) ";
-  // console.log(req.body);
-  const [ratesql_rows] = await db.query(ratesql, [
-    req.body.food_product_sid,
-    req.body.mb_sid,
-    req.body.rating,
-  ]);
-  const [comment_rows] = await db.query(commentsql, [
-    req.body.food_product_sid,
-    req.body.mb_sid,
-    req.body.comment,
-  ]);
-  // console.log(comment_rows);
+    "INSERT INTO `product_comment`( `food_product_sid`, `mb_sid`, `user_comment`, `rating`, `created_at`) VALUES (?,?,?,?,NOW()) ";
 
-  const user_comment = { rate: ratesql_rows, comment: comment_rows };
-  if (user_comment.comment) user_comment.comment.success = true;
-  // console.log(user_comment);
-  const sql = "SELECT * FROM `product_comment` WHERE sid = ? ";
-  const [userComment_rows] = await db.query(sql, [comment_rows.insertId]);
+  const [result] = await db.query(commentsql, [
+    food_product_sid,
+    mb_sid,
+    comment,
+    rating,
+  ]);
+
   // console.log(userComment_rows[0].user_comment);
-  res.json({ user_comment, text: userComment_rows[0].user_comment });
+  res.json({ result, success: true });
 });
 
+
+
+// 抓評分數和留言
+router.get("/userComment/:sid", async (req, res) => {
+  const food_product_sid = req.params.sid;
+  const sql =
+    "SELECT c.* , m.`mb_photo`, m.`mb_name` FROM `product_comment` c JOIN `member` m ON c.`mb_sid`=m.mb_sid WHERE c.food_product_sid = ? ";
+
+  // const product_sid = req.query.food_product_sid;
+  // "SELECT * FROM `product_rating` WHERE food_product_sid = ? "
+  const [rows] = await db.query(sql, [food_product_sid])
+  
+  res.json(rows);
+});
+
+//商品篩選
 router.post("/productFilter", async (req, res) => {
   const output = {
     success: false,
@@ -235,17 +246,6 @@ router.post("/productFilter", async (req, res) => {
   res.json({ filter_rows });
 });
 
-//抓評分數和留言
-// router.get("/userComment/:sid", async (req, res) => {
-//   const food_product_sid = req.query.food_product_sid;
-//   "SELECT * FROM `product_comment` WHERE food_product_sid = ? "
-//   const [userComment_rows] = await db.query(product_comment, [sid])
-
-//   const product_sid = req.query.food_product_sid;
-//   "SELECT * FROM `product_rating` WHERE food_product_sid = ? "
-//   const [userRatiing_rows] = await db.query(product_rating, [sid])
-// });
-
 //商品種類
 router.get("/category", async (req, res) => {
   const category_sid = req.query.category_sid;
@@ -272,11 +272,5 @@ router.get("/category", async (req, res) => {
   // console.log(category_rows);
   res.json({ category_rows });
 });
-
-//商品種類
-// router.get("/category", async (req, res) => {
-//   const category_sid = req.query.category_sid;
-//   console.log({ category_sid });
-//   let category = "SELECT * FROM `product_category`";
 
 module.exports = router;
