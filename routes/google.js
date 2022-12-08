@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require(__dirname + "/../modules/db_connect");
 const { OAuth2Client } = require("google-auth-library");
+const jwt = require("jsonwebtoken");
 
 // 載入 GCP OAuth 2.0 用戶端 ID 憑證
 const keys = require(__dirname + "/../client_secret.json");
@@ -34,7 +35,6 @@ router.get("/", async (req, res) => {
   // console.log("authorizeUrl", authorizeUrl);
   // console.log('end')
   // console.log('res', res)
-  // res.render("/google/", { title: "點擊連結登入", authorizeUrl });
 
   output.title = authorizeUrl;
   output.success = true;
@@ -51,9 +51,9 @@ router.get("/callback", async (req, res) => {
   const qs = req.query;
   let myData = {};
 
-  console.log("qs1", qs);
-  console.log("qs1.code", qs.code);
-  console.log("myData1", myData);
+  // console.log("qs1", qs);
+  // console.log("qs1.code", qs.code);
+  // console.log("myData1", myData);
 
   if (qs.code) {
     // 內容參考 /references/from-code-to-tokens.json
@@ -61,7 +61,7 @@ router.get("/callback", async (req, res) => {
     // console.log(JSON.stringify(r, null, 2));
     oAuth2c.setCredentials(r.tokens);
 
-    console.log("r", r);
+    // console.log("r", r);
 
     // 連線回應內容參考 /references/tokeninfo-results-oauth2.googleapis.com.json
     console.log(
@@ -74,18 +74,120 @@ router.get("/callback", async (req, res) => {
 
     const response = await oAuth2c.request({ url });
 
-    console.log("response", response);
+    // console.log("oAuth2c response", response);
+    // return res.json({ success: true, data: response.data });
     // response 內容參考 /references/people-api-response.json
     myData = response.data;
   }
 
-  //   res.render("callback", { title: "Callback result", qs, myData });
+  const { names, photos, emailAddresses } = myData;
 
   console.log("qs2", qs);
   console.log("qs1.code", qs.code);
   console.log("myData2", myData);
+  console.log("myData2, name", names[0].displayName);
+  console.log("myData2, photo", photos[0].url);
+  console.log("myData2, email", emailAddresses[0].value);
 
-  output.success = true;
+  const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
+  const [result] = await db.query(sql, [emailAddresses[0].value]);
+
+  console.log("3");
+
+  if (result.length === 1) {
+    const row = result[0];
+
+    // JWT
+    const { mb_sid, mb_photo, mb_name, mb_email } = row;
+    // console.log(row);
+    const token = jwt.sign(
+      {
+        mb_sid,
+        mb_photo,
+        mb_name,
+        mb_email,
+      },
+      process.env.JWT_SECRET
+    );
+    // console.log(row);
+    // console.log("token", token);
+
+    output.auth = {
+      mb_sid,
+      mb_photo,
+      mb_name,
+      mb_email,
+      token,
+    };
+
+    // console.log("result: ", result);
+    // console.log("result.length: ", result.length);
+    // output.success = false;
+    // output.error = "帳號重覆";
+
+    console.log("1");
+  } else {
+    try {
+      const sql =
+        "INSERT INTO `member`(`mb_photo`,`mb_name`, `mb_email`, `mb_pass`,`mb_gender`, `mb_address_city`, `mb_address_area`, `mb_address_detail`, `mb_phone`, `mb_created_at`, `last_login_at`, `mb_status`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)";
+
+      console.log("2");
+
+      // console.log(req.body)
+
+      // console.log(encryptedPass);
+
+      const [result] = await db.query(sql, [
+        "noname.png",
+        names[0].displayName,
+        emailAddresses[0].value,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+      ]);
+
+      if (result.affectedRows) {
+        const row = result[0];
+
+        // JWT
+        const { mb_sid, mb_photo, mb_name, mb_email } = row;
+        // console.log(row);
+        const token = jwt.sign(
+          {
+            mb_sid,
+            mb_photo,
+            mb_name,
+            mb_email,
+          },
+          process.env.JWT_SECRET
+        );
+        // console.log(row);
+        // console.log("token", token);
+
+        output.auth = {
+          mb_sid,
+          mb_photo,
+          mb_name,
+          mb_email,
+          token,
+        };
+
+        output.success = true;
+      }
+    } catch (e) {
+      output.success = false;
+      output.error = "發生錯誤";
+
+      console.log(e);
+
+      console.log("4");
+    }
+  }
+
+  // output.success = true;
 
   res.json(output);
 });

@@ -18,7 +18,7 @@ router.post("/register", async (req, res) => {
   // 這邊要把checkuser的錯誤try catch在這邊
   const sql = "SELECT * FROM `member` WHERE `mb_email` = ?";
   const [result] = await db.query(sql, [req.body.mbrEmail]);
-  console.log("I am here");
+  // console.log("I am here");
 
   if (result.length === 1) {
     console.log("result: ", result);
