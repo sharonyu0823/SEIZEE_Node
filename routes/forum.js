@@ -196,7 +196,7 @@ router.get('/myPost',async(req,res)=>{
     const mid = req.query.mid ? +req.query.mid : 0;
     const myCookPost = "SELECT `forum_cooking_post`.* ,`member`.`mb_photo`, `member`.`mb_name` , `member`.`mb_email` FROM `forum_cooking_post` JOIN `member` ON `forum_cooking_post`.`member_sid` = `member`.`mb_sid` WHERE member_sid=?";
     const [myCookPostRows] = await db.query(myCookPost, [mid]);
-    res.json(myCookPostRows);
+    res.json({myCookPostRows});
 })
 
 //收藏

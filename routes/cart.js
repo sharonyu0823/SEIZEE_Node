@@ -162,9 +162,8 @@ router.get('/add-save/', async (req, res) => {
     }
 })
 
-// CartInfo 按下付款後
+// CartInfo - Line Pay 按下付款後
 // 將訂單寫入訂單/明細(狀態：未付款)，先不修改庫存表裡面的數字
-// 將資料整理後送給line pay
 router.post('/linePay/:ordernum', async (req, res) => {
     const mb_sid = req.query.mid
     const ordernum = req.query.ordernum
@@ -240,7 +239,6 @@ router.post('/linePay/:ordernum', async (req, res) => {
     const url = `${LINEPAY_SITE}/${LINEPAY_VERSION}${uri}`;
     const linePayRes = await axios.post(url, linePayBody, {headers });
     // console.log(headers);
-
     // console.log(linePayRes.data.info);
     // console.log({linePayBody})
     // console.log(JSON.stringify(linePayBody, null, 4))
@@ -265,34 +263,11 @@ router.post('/linePay/:ordernum', async (req, res) => {
 
 })
 
-// CartDone - 訂單成功頁面帶出該筆訂單明細
-// 歷史訂單+訂單明細+會員sid+商品列表
-router.get('/payment-done/:mbsid', async (req, res) => {
-    const mbsid = req.params.mbsid
-
-    const this_order_details_sql = `SELECT * FROM order_history 
-    JOIN order_details ON order_history.order_num = order_details.order_num 
-    JOIN order_status ON order_history.order_status_sid = order_status.sid 
-    JOIN order_payment ON order_history.order_payment_sid = order_payment.sid 
-    JOIN member ON order_history.mb_sid = member.mb_sid
-    WHERE order_history.mb_sid = ? 
-    ORDER BY order_history.created_at DESC`;
-    const [this_order_details_rows] = await db.query(this_order_details_sql, [mbsid]);
-    const row =  { ...this_order_details_rows}; 
-
-    if(row[0]) {
-        // console.log(row[0]);
-        res.json({this_order_details_rows});
-    } else {
-        res.send('這個會員沒有對應的訂單記錄');
-    }
-
-})
-
-
-// 本地端頁面
+// 使用者付款後
+// 付款成功 - 更新狀態+庫存；付款失敗 - 更新狀態
 router.get('/linePay/confirm', async (req, res) => {
-    const {transactionId, orderId} = req.query;
+    const {transactionId, orderId, mid} = req.query;
+    console.log(`transactionId: ${transactionId}, orderId: ${orderId}, mid: ${mid}`);
     const order = orders[orderId];
 
     try {
@@ -309,7 +284,7 @@ router.get('/linePay/confirm', async (req, res) => {
     // API 位址
     const url = `${LINEPAY_SITE}/${LINEPAY_VERSION}${uri}`;
     const linePayRes = await axios.post(url, linePayBody, { headers });
-    console.log(JSON.stringify(linePayRes));
+    console.log(linePayRes);
 
     // 請求成功...
     if (linePayRes?.data?.returnCode === '0000') {
@@ -323,7 +298,8 @@ router.get('/linePay/confirm', async (req, res) => {
             // 更新訂單付款狀態 
             const update_order_status_sql = `UPDATE order_history SET order_status_sid = 1 WHERE order_num = ${ordernum}`;
             const [update_order_status_rows] = await db.query(update_order_status_sql);
-            
+            console.log('付款狀態已更新');
+
             // JOIN 訂單明細找到要修改的商品&數量
             const get_sid_qty_sql = `SELECT * FROM order_details JOIN order_history ON order_details.order_num = order_history.order_num WHERE order_details.order_num = ${ordernum}`;
             const [get_sid_qty_rows] = await db.query(get_sid_qty_sql);
@@ -336,16 +312,16 @@ router.get('/linePay/confirm', async (req, res) => {
                 get_sid_qty_rows[i].product_sid,
                 ])
             }
-            res.json({
-                success: true,
-                // url: `/success/${orderId}`,
-                url: `/success/${orderId}`,
-            });
+            console.log('商品庫存已更新');
         }
         catch(error) {
             console.log(error.message)
         }
         console.log('請求成功')
+        res.json({
+            success: true,
+            url: `/success/${orderId}`,
+        });
     } else {
         // 訂單的付款狀態改為「付款失敗」
 
@@ -357,7 +333,7 @@ router.get('/linePay/confirm', async (req, res) => {
         // 將付款狀態改為「6 付款失敗」
         const pay_failed_sql = `UPDATE order_history SET order_status_sid = 6 WHERE order_num = ${ordernum}`;
         const [pay_failed_row] = await db.query(pay_failed_sql);
-        
+        console.log('付款狀態更新為付款失敗');
         res.json({
             success: false,
             message: linePayRes,
@@ -371,70 +347,36 @@ router.get('/linePay/confirm', async (req, res) => {
     res.end();
   })
 
+// CartDone - 訂單成功頁面帶出該筆訂單記錄
+// 歷史訂單+付款方式
+router.get('/payment-done/:mbsid', async (req, res) => {
+    const mbsid = req.params.mbsid
+
+    const this_order_details_sql = `SELECT * FROM order_history 
+    JOIN order_status ON order_history.order_status_sid = order_status.sid 
+    JOIN order_payment ON order_history.order_payment_sid = order_payment.sid 
+    ORDER BY order_history.created_at DESC LIMIT 1 `;
+
+    // const this_order_details_sql = `SELECT * FROM order_history 
+    // JOIN order_details ON order_history.order_num = order_details.order_num 
+    // JOIN order_status ON order_history.order_status_sid = order_status.sid 
+    // JOIN order_payment ON order_history.order_payment_sid = order_payment.sid 
+    // JOIN member ON order_history.mb_sid = member.mb_sid
+    // WHERE order_history.mb_sid = ? 
+    // ORDER BY order_history.created_at DESC`;
+    const [this_order_details_rows] = await db.query(this_order_details_sql, [mbsid]);
+    const row =  { ...this_order_details_rows}; 
+
+    if(row[0]) {
+        // console.log(row[0]);
+        res.json({this_order_details_rows});
+    } else {
+        res.send('這個會員沒有對應的訂單記錄');
+    }
+
+})
+
+
 
 
 module.exports = router;
-
-// 範例 -- 用不到
-// router
-// .get('/', (req, res) => {
-//     res.render('index', { title: 'Express' });
-// })
-// 前端頁面
-// .get('/checkout/:id', (req, res) => {
-//     const { id } = req.params;
-//     const order = JSON.parse(JSON.stringify(sampleData[id]));
-//     order.id = dayjs(new Date()).format('YYYYMMDDHHmmss');
-//     orders[order.id] = order;
-
-//     res.render('checkout', { order });
-// })
-// .get('/success/:id', (req, res) => {
-//     const { id } = req.params;
-//     const order = orders[id];
-
-//     res.status(200).send({success: true, message: '付款成功'})
-//     // res.render('success', { order });
-// })
-
-
-// 跟 LINE PAY 串接的 API
-// router.post('/example/linePay/:orderId', async (req, res) => {
-//     const {orderNo } = req.params;
-//     const order = orders[orderNo];
-//     // console.log('create-order', order);
-  
-//     try {
-//       // 建立 LINE Pay 請求規定的資料格式
-//       const linePayBody = createLinePayBody(order)
-
-//       // CreateSignature 建立加密內容
-//       const uri = '/payments/request';
-//       const headers = createSignature(uri, linePayBody);
-    
-//       // 準備送給 LINE Pay 的資訊
-//       console.log(linePayBody, signature);
-
-//       // API 位址
-//       const url = `${LINEPAY_SITE}/${LINEPAY_VERSION}${uri}`;
-    
-//       const linePayRes = await axios.post(url, linePayBody, { headers });
-//       // console.log(linePayRes.data.info);
-
-//       if(linePayRes?.data?.returnCode === '0000') {
-//         res.redirect(linePayRes?.data?.info.paymentUrl.web);
-//       } else {
-//         res.status(400).send({
-//           message: '訂單不存在',
-//           });
-//       }
-//     }
-//     catch(error) {
-//       // 各種運行錯誤的狀態：可進行任何的錯誤處理
-//       console.log(error.message);
-//       res.end();
-//     }
-//   })
-
-// 範例參考連結
-// https://github.com/Wcc723/linePaySample 
