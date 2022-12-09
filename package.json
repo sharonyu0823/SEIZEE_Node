@@ -20,6 +20,7 @@
     "express": "~4.16.1",
     "express-fileupload": "^1.4.0",
     "express-session": "^1.17.3",
+    "google-auth-library": "^8.7.0",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",

@@ -70,6 +70,7 @@ app.use("/product", require(__dirname + "/routes/product"));
 
 // 05-member
 app.use("/user", require(__dirname + "/routes/user"));
+app.use("/google", require(__dirname + "/routes/google"));
 app.use("/user-search", require(__dirname + "/routes/user_others"));
 
 // 06-event
