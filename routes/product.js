@@ -34,7 +34,7 @@ router.get("/list", async (req, res) => {
     "LEFT JOIN `product_category` on `product_category`.`sid` = `product_category_sid` " +
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
-    "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
+    "FROM `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
     "LEFT JOIN `product_comment` on product_comment.food_product_sid=`food_product`.`sid` " +
     whereCondition +
     " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
@@ -46,7 +46,7 @@ router.get("/list", async (req, res) => {
   let shop = null;
   if (product_rows.length) {
     const shop_list_sid = product_rows[0].shop_list_sid;
-    const sql = `SELECT * FROM shop_list WHERE sid =?`;
+    const sql = `SELECT * FROM shop_list LEFT JOIN shop_address_area on	shop_address_area_sid = shop_address_area.sid LEFT JOIN shop_address_city on shop_address_city_sid = shop_address_city.sid WHERE shop_list.sid =? `;
     const [shop_data] = await db.query(sql, [shop_list_sid]);
     console.log(shop_data);
 
