@@ -113,7 +113,7 @@ router.get('/post_cook', async(req,res)=>{
     if(timeOp && timeOp.length){
         $where += " AND cp.times IN ('" + timeOp.join("','")+ "') ";
     }
-    cookPost = `SELECT cp.* ,member.mb_photo, member.mb_name,member.mb_email FROM forum_cooking_post cp JOIN member ON cp.member_sid = member.mb_sid JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid ${$where} GROUP BY cp.sid `;
+    cookPost = `SELECT cp.* ,member.mb_photo, member.mb_name,member.mb_email FROM forum_cooking_post cp JOIN member ON cp.member_sid = member.mb_sid JOIN forum_instructions ins ON cp.sid=ins.cooking_post_sid ${$where} GROUP BY cp.sid  ORDER BY creat_at DESC`;
 
     //console.log({cookPost})
 /*
@@ -192,9 +192,9 @@ router.get('/all_post', async(req,res)=>{
 //我的發文
 router.get('/myPost',async(req,res)=>{
     const mid = req.query.mid ? +req.query.mid : 0;
-    const myCookPost = "SELECT `forum_cooking_post`.* ,`member`.`mb_photo`, `member`.`mb_name` , `member`.`mb_email` FROM `forum_cooking_post` JOIN `member` ON `forum_cooking_post`.`member_sid` = `member`.`mb_sid` WHERE member_sid=?";
+    let myCookPost = "SELECT `forum_cooking_post`.* ,`member`.`mb_photo`, `member`.`mb_name` , `member`.`mb_email` FROM `forum_cooking_post` JOIN `member` ON `forum_cooking_post`.`member_sid` = `member`.`mb_sid` WHERE member_sid=? ORDER BY creat_at DESC";
     const [myCookPostRows] = await db.query(myCookPost, [mid]);
-    res.json(myCookPostRows);
+    res.json({myCookPostRows});
 })
 
 //收藏
@@ -234,8 +234,6 @@ router.get('/forum_likes', async (req,res) => {
     const [rows] = await db.query(likesSql, [mid]);
 
     res.json({success: true, rows});
-    
-
 })
 
 //上傳留言
@@ -370,5 +368,26 @@ router.post('/upload',upload.single('file'),async(req,res)=>{
 //     res.json({storePhotoRows});
 // })
 
+//全站關鍵字搜尋
+router.get('/searchPost',async(req,res)=>{
+    const searchData = req.query.searchData?req.query.searchData:''
+    let searchCpSql = "SELECT * FROM forum_cooking_post WHERE title LIKE ? OR induction LIKE ?"
+    const [resCpData]=await db.query(searchCpSql,[`%${searchData}%`, `%${searchData}%`])
+    let searOpCpSql = "SELECT * FROM forum_official_post WHERE title LIKE ? OR induction LIKE ?"
+    const [resOpData]=await db.query(searOpCpSql,[`%${searchData}%`, `%${searchData}%`])
+    let searSpCpSql = "SELECT * FROM forum_store_post WHERE title LIKE ? OR induction LIKE ?"
+    const [resSpData]=await db.query(searSpCpSql,[`%${searchData}%`, `%${searchData}%`])
+    let searShCpSql = "SELECT * FROM forum_share_post WHERE title LIKE ? OR induction LIKE ?"
+    const [resShData]=await db.query(searShCpSql,[`%${searchData}%`, `%${searchData}%`])
+
+    const resSearData=[
+        ...resCpData,
+        ...resOpData,
+        ...resSpData,
+        ...resShData,
+    ]
+    console.log(resSearData);
+    res.json({success: true, resSearData});
+})
 
 module.exports = router;
