@@ -21,6 +21,37 @@ router.post('/event-test', async(req, res)=>{
     res.json(test_rows); 
 })
 
+router.post('/all_event_likes', async (req,res) => {
+    const memberSid = req.body.memberSid ? +req.body.memberSid : 0;
+    let sql = `SELECT event_sid FROM event_likes WHERE member_sid=?`;
+    const [rows] = await db.query(sql, [memberSid]);
+    res.json(rows);
+})
+
+//收藏
+router.post('/event_toggle', async (req,res) => {
+    //eventSid, memberSid
+    const eventSid = req.body.eventSid ? +req.body.eventSid : 0;
+    const memberSid = req.body.memberSid ? +req.body.memberSid : 0;
+
+    if(!eventSid || !memberSid) return res.json({success: false});
+
+    let sql = `SELECT * FROM event_likes WHERE member_sid=? AND event_sid=? `;
+    const [rows] = await db.query(sql, [memberSid, eventSid]);
+    if(rows.length){
+        // had
+        let sql_del = `DELETE FROM event_likes WHERE member_sid=? AND event_sid=? `;
+        await db.query(sql_del, [memberSid, eventSid]);
+        res.json({success: true, memberSid, eventSid, msg:'delete'});
+    } else {
+        
+        let sql_insert = `INSERT INTO event_likes (member_sid, event_sid, created_at) VALUES (?, ?, NOW())`;
+        await db.query(sql_insert, [memberSid, eventSid]);
+        res.json({success: true, memberSid, eventSid, msg:'insert'});
+    }
+
+})
+/*
 router.post('/event-add', async(req, res)=>{
     const {memberSid, eventSid} = req.body
     const sql_likes = "INSERT INTO event_likes (member_sid, event_sid, created_at) VALUES (?, ?, current_timestamp());";
@@ -29,6 +60,7 @@ router.post('/event-add', async(req, res)=>{
         ok: true
     }); 
 })
+*/
 router.post('/event-ticket', async(req, res)=>{
     const {memberSid, timeTable} = req.body
     if(timeTable && timeTable.length) {
@@ -66,33 +98,5 @@ router.get('/event-registered/:eventSid', async(req, res)=>{
     const [test_rows] = await db.query(test_sql);
     res.json(test_rows);
 })
-// router.get('/event-test/workshop', async(req, res, next)=>{
-//     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 1;";
-//     const [test_rows] = await db.query(test_sql);
-//     res.json({test_rows});
-// })
-// router.get('/event-test/music', async(req, res, next)=>{
-//     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 2;";
-//     const reigistered = "SELECT COUNT (1) FROM `event_registered` WHERE `event_all`.`event_sid` = 5";
-//     const [test_rows] = await db.query(test_sql);
-//     // const [reigistered_rows] = await db.query(reigistered);
-//     // console.log({registered_rows});
-//     res.json({test_rows});
-// })
-// router.get('/event-test/seminar', async(req, res, next)=>{
-//     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 3;";
-//     const [test_rows] = await db.query(test_sql);
-//     res.json({test_rows});
-// })
-// router.get('/event-test/vr', async(req, res, next)=>{
-//     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 4;";
-//     const [test_rows] = await db.query(test_sql);
-//     res.json({test_rows});
-// })
-// router.get('/event-test/theater', async(req, res, next)=>{
-//     const test_sql = "SELECT * FROM `event_all` JOIN `event_style` ON `event_all`.`style` = `event_style`.`sid` WHERE `cate` = 5;";
-//     const [test_rows] = await db.query(test_sql);
-//     res.json({test_rows});
-// })
 
 module.exports = router;
