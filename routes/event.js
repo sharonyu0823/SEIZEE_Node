@@ -21,6 +21,37 @@ router.post('/event-test', async(req, res)=>{
     res.json(test_rows); 
 })
 
+router.post('/all_event_likes', async (req,res) => {
+    const memberSid = req.body.memberSid ? +req.body.memberSid : 0;
+    let sql = `SELECT event_sid FROM event_likes WHERE member_sid=?`;
+    const [rows] = await db.query(sql, [memberSid]);
+    res.json(rows);
+})
+
+//收藏
+router.post('/event_toggle', async (req,res) => {
+    //eventSid, memberSid
+    const eventSid = req.body.eventSid ? +req.body.eventSid : 0;
+    const memberSid = req.body.memberSid ? +req.body.memberSid : 0;
+
+    if(!eventSid || !memberSid) return res.json({success: false});
+
+    let sql = `SELECT * FROM event_likes WHERE member_sid=? AND event_sid=? `;
+    const [rows] = await db.query(sql, [memberSid, eventSid]);
+    if(rows.length){
+        // had
+        let sql_del = `DELETE FROM event_likes WHERE member_sid=? AND event_sid=? `;
+        await db.query(sql_del, [memberSid, eventSid]);
+        res.json({success: true, memberSid, eventSid, msg:'delete'});
+    } else {
+        
+        let sql_insert = `INSERT INTO event_likes (member_sid, event_sid, created_at) VALUES (?, ?, NOW())`;
+        await db.query(sql_insert, [memberSid, eventSid]);
+        res.json({success: true, memberSid, eventSid, msg:'insert'});
+    }
+
+})
+/*
 router.post('/event-add', async(req, res)=>{
     const {memberSid, eventSid} = req.body
     const sql_likes = "INSERT INTO event_likes (member_sid, event_sid, created_at) VALUES (?, ?, current_timestamp());";
@@ -29,6 +60,7 @@ router.post('/event-add', async(req, res)=>{
         ok: true
     }); 
 })
+*/
 router.post('/event-ticket', async(req, res)=>{
     const {memberSid, timeTable} = req.body
     if(timeTable && timeTable.length) {
