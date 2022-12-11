@@ -4,7 +4,7 @@ package-lock.json
 .env
 
 public/uploads/*/*
-# public/images/*/*
+public/images/*/*
 
 .vscode
 yarn.lock
