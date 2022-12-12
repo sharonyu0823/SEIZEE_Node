@@ -175,14 +175,15 @@ router.post('/linePay/', async (req, res) => {
 
     // 將訂單寫入訂單/明細(狀態：未付款)
     try {
-        const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, shop_sid, origin_total, total, mb_sid, order_status_sid) VALUES (?, NOW(), ?, ?, ?, ?, ?)`;
+        const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, shop_sid, origin_total, total, mb_sid, order_status_sid, order_patment_sid) VALUES (?, NOW(), ?, ?, ?, ?, ?,?)`;
         const [add_order_history_row] = await db.query(add_order_history_sql, [
             ordernum,
             req.body.userCart[0].shop_sid,
             req.body.totalUnitPrice,
             req.body.totalSalePrice,
             mb_sid,
-            5
+            5,
+            2
         ]);
         
         for(let i =0; i<req.body.userCart.length;i++){
