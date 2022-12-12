@@ -25,14 +25,16 @@ router.get("/list", async (req, res) => {
   if (whereCondition != "") whereCondition = " WHERE " + whereCondition;
   // console.log(whereCondition);
   let product_sql =
-    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
+    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `shop_city`, `shop_area`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
     "FROM food_product " +
-    "LEFT JOIN shop_list on `shop_list`.sid = shop_list_sid " +
-    "LEFT JOIN `product_picture` on `product_picture`.sid = (SELECT `product_picture`.sid FROM `product_picture` WHERE `product_picture`.sid =`food_product`.sid ORDER BY `product_picture`.sid LIMIT 1) " +
+    "LEFT JOIN `shop_list` on `shop_list`.sid = shop_list_sid " +
+    "LEFT JOIN `shop_address_area` on	`shop_address_area_sid` = `shop_address_area`.sid " +
+    "LEFT JOIN `shop_address_city` on `shop_address_city_sid`= `shop_address_city`.sid " +
+    "LEFT JOIN `product_picture` on `product_picture`.sid = (SELECT `product_picture`.sid FROM `product_picture` WHERE `food_product_sid` =`food_product`.sid ORDER BY `product_picture`.seq LIMIT 1) " +
     "LEFT JOIN `product_category` on `product_category`.`sid` = `product_category_sid` " +
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
-    "from `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
+    "FROM `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
     "LEFT JOIN `product_comment` on product_comment.food_product_sid=`food_product`.`sid` " +
     whereCondition +
     " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
@@ -44,7 +46,7 @@ router.get("/list", async (req, res) => {
   let shop = null;
   if (product_rows.length) {
     const shop_list_sid = product_rows[0].shop_list_sid;
-    const sql = `SELECT * FROM shop_list WHERE sid =?`;
+    const sql = `SELECT * FROM shop_list LEFT JOIN shop_address_area on	shop_address_area_sid = shop_address_area.sid LEFT JOIN shop_address_city on shop_address_city_sid = shop_address_city.sid WHERE shop_list.sid =? `;
     const [shop_data] = await db.query(sql, [shop_list_sid]);
     console.log(shop_data);
 
@@ -56,18 +58,17 @@ router.get("/list", async (req, res) => {
   // res.json({ product_rows });
 });
 
-//隨機推薦相關產品
 router.get("/suggest", async (req, res) => {
   const food_product_sid = +req.query.sid;
   let suggest_sql =
-    "SELECT RAND() as r, `food_product`.sid, `picture_url` " +
-    "FROM `food_product` " +
-    "LEFT JOIN `product_picture` ON `product_picture`.sid =( SELECT `product_picture`.sid FROM `product_picture` " +
+    "SELECT RAND() as r, `food_product`.sid, `food_product`.`product_name`, picture_url " +
+    "FROM food_product " +
+    "LEFT JOIN product_picture ON `product_picture`.sid =( SELECT `product_picture`.sid FROM product_picture " +
     "WHERE `food_product_sid`= `food_product`.sid " +
     "ORDER BY `product_picture`.sid " +
     "LIMIT 1 ) " +
-    "WHERE `food_product`.product_category_sid in (SELECT `product_category_sid` " +
-    "FROM `food_product` WHERE `food_product`.sid = " +
+    "WHERE `food_product`.product_category_sid in (SELECT product_category_sid " +
+    "FROM food_product WHERE `food_product`.sid = " +
     food_product_sid +
     ") " +
     "AND `food_product`.sid <> " +
@@ -160,8 +161,6 @@ router.post("/comment", upload.none(), async (req, res) => {
     comment,
     rating,
   ]);
-
-  // console.log(userComment_rows[0].user_comment);
   res.json({ result, success: true });
 });
 
@@ -169,7 +168,7 @@ router.post("/comment", upload.none(), async (req, res) => {
 router.get("/userComment/:sid", async (req, res) => {
   const food_product_sid = req.params.sid;
   const sql =
-    "SELECT c.* , m.`mb_photo`, m.`mb_name` FROM `product_comment` c JOIN `member` m ON c.`mb_sid`=m.mb_sid WHERE c.food_product_sid = ? ";
+    "SELECT c.* ,ROUND(AVG(rating)*2)/2 AS rating, m.`mb_photo`, m.`mb_name` FROM `product_comment` c JOIN `member` m ON c.`mb_sid`=m.mb_sid WHERE c.food_product_sid = ? ";
   const [rows] = await db.query(sql, [food_product_sid])
   res.json(rows);
 });
@@ -200,10 +199,7 @@ router.post("/productFilter", async (req, res) => {
 
   let category =
     "SELECT `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
-    "LEFT JOIN `product_picture` ON `product_picture`.sid =( SELECT `product_picture`.sid FROM `product_picture` " +
-    "WHERE `food_product_sid`= `food_product`.sid " +
-    "ORDER BY `product_picture`.sid " +
-    "LIMIT 1 ) " +
+    "LEFT JOIN `product_picture` on `product_picture`.sid = (SELECT `product_picture`.sid FROM `product_picture` WHERE `food_product_sid` =`food_product`.sid ORDER BY `product_picture`.seq LIMIT 1) " +
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
     "LEFT JOIN product_comment on product_comment.food_product_sid = food_product.sid " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
