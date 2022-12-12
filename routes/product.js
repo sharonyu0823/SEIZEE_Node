@@ -199,10 +199,7 @@ router.post("/productFilter", async (req, res) => {
 
   let category =
     "SELECT `food_product`.sid, `picture_url`, `product_name`, `unit_price`, `product_price`,`sale_price`, `product_description`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end as qty FROM `food_product` " +
-    "LEFT JOIN `product_picture` ON `product_picture`.sid =( SELECT `product_picture`.sid FROM `product_picture` " +
-    "WHERE `food_product_sid`= `food_product`.sid " +
-    "ORDER BY `product_picture`.sid " +
-    "LIMIT 1 ) " +
+    "LEFT JOIN `product_picture` on `product_picture`.sid = (SELECT `product_picture`.sid FROM `product_picture` WHERE `food_product_sid` =`food_product`.sid ORDER BY `product_picture`.seq LIMIT 1) " +
     "LEFT JOIN ( select product_sid, sum(quantity) as total_order_quantity from `order_details` group by product_sid ) t1 on `product_sid` = `food_product`.`sid` " +
     "LEFT JOIN product_comment on product_comment.food_product_sid = food_product.sid " +
     "LEFT JOIN ( select food_product_sid, sum(inventory_qty) as total_inventory_qty " +
