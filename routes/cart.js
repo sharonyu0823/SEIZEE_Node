@@ -8,6 +8,8 @@ const { HmacSHA256 } = require('crypto-js');
 const Base64 = require('crypto-js/enc-base64');
 const dayjs = require('dayjs');
 
+
+
 const { 
     LINEPAY_CHANNEL_ID, 
     LINEPAY_CHANNEL_SECRET_KEY, 
@@ -63,11 +65,11 @@ router.get('/test123', async (req, res) => {
 // 測試2，帶會員資料
 router.get('/info/:mid', async (req, res) => {
     const mid = req.params.mid;
-    console.log(mid);
+    // console.log(mid);
     const member_info_sql = `SELECT * FROM member WHERE mb_sid = ${mid}`;
     const [member_info_rows]  = await db.query(member_info_sql);
     const row = {...member_info_rows}
-    // console.log(row);
+    console.log(row);
 
     if(row[0]) {
         // console.log(row[0].member_nickname);
@@ -119,7 +121,8 @@ router.get('/rec-merch/:shopsid', async (req, res) => {
     const shopsid = req.params.shopsid;
     const rec_merch_sql = `SELECT * FROM food_product 
     JOIN product_inventory ON food_product.sid = product_inventory.food_product_sid 
-    JOIN product_picture ON food_product.sid = product_picture.food_product_sid
+    LEFT JOIN product_picture ON product_picture.sid =( SELECT product_picture.sid FROM product_picture  WHERE food_product_sid= food_product.sid ORDER BY product_picture.sid 
+    LIMIT 1 ) 
     WHERE shop_list_sid = ${shopsid} 
     && product_launch = 1 
     && inventory_qty > 0`;
@@ -164,7 +167,7 @@ router.get('/add-save/', async (req, res) => {
 
 // CartInfo - Line Pay 按下付款後
 // 將訂單寫入訂單/明細(狀態：未付款)，先不修改庫存表裡面的數字
-router.post('/linePay/:ordernum', async (req, res) => {
+router.post('/linePay/', async (req, res) => {
     const mb_sid = req.query.mid
     const ordernum = req.query.ordernum
     // const ordernum = dayjs(new Date()).format('YYYYMMDDHHmmss')
@@ -214,7 +217,7 @@ router.post('/linePay/:ordernum', async (req, res) => {
     })
 
     const order = {
-        orderId: req.body.userCart[0].shop_sid,
+        orderId: ordernum,
         amount: req.body.totalSalePrice,
 
         packages:[
@@ -232,7 +235,7 @@ router.post('/linePay/:ordernum', async (req, res) => {
 
     try {
     const linePayBody = createLinePayBody(order);
-
+        console.log('body111111',linePayBody)
     const uri = '/payments/request';
     const headers = createSignature(uri, linePayBody);
 
@@ -243,7 +246,7 @@ router.post('/linePay/:ordernum', async (req, res) => {
     // console.log({linePayBody})
     // console.log(JSON.stringify(linePayBody, null, 4))
     // console.log(linePayRes);
-
+console.log(linePayRes)
     if(linePayRes?.data?.returnCode === '0000') {
         res.json({
             success: true,
@@ -347,6 +350,103 @@ router.get('/linePay/confirm', async (req, res) => {
     res.end();
   })
 
+router.post('/tappay/:ordernum', async (req, res) => {
+    const mb_sid = req.query.mid
+    const ordernum = req.query.ordernum
+
+    // 將訂單寫入訂單/明細(狀態：未付款)
+    try {
+        const add_order_history_sql = `INSERT INTO order_history (order_num, created_at, shop_sid, origin_total, total, mb_sid, order_status_sid, order_payment_sid) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?)`;
+        const [add_order_history_row] = await db.query(add_order_history_sql, [
+            ordernum,
+            req.body.userCart[0].shop_sid,
+            req.body.totalUnitPrice,
+            req.body.totalSalePrice,
+            mb_sid,
+            5,
+            2
+        ]);
+        
+        for(let i =0; i<req.body.userCart.length;i++){
+            const add_order_details_sql = `INSERT INTO order_details (order_num, created_at, product_sid, product_name, quantity, origin_price, total_price) VALUES (?, NOW(), ?, ?, ?, ?, ?)`;
+            const [add_order_details_rows] = await db.query(add_order_details_sql,[
+                ordernum,
+                req.body.userCart[i].prod_sid,
+                req.body.userCart[i].name,
+                req.body.userCart[i].amount,
+                (req.body.userCart[i].unit_price * req.body.userCart[i].amount),
+                (req.body.userCart[i].sale_price * req.body.userCart[i].amount),
+            ])
+            
+        } 
+
+        console.log('訂單成功寫入資料庫，成功更新庫存數量')
+    }
+    catch (error) {
+        console.log(error.message)
+    }
+
+    // 將商品資料整理成line pay格式
+    const items = req.body.userCart.map(i=>{
+        const {amount, name, prod_sid, sale_price, unit_price} = i;
+        return {
+            id: prod_sid,
+            name,
+            quantity: amount,
+            price: sale_price,
+            originalPrice: unit_price,
+        }
+    })
+
+    const order = {
+        orderId: req.body.userCart[0].shop_sid,
+        amount: req.body.totalSalePrice,
+
+        packages:[
+            {
+                id: '1',
+                amount: req.body.totalSalePrice,
+                products: items
+            }
+        ],
+        
+    }
+    orders[order.orderId] = order;
+    console.log('orders: ', orders);
+    // console.log('create-order', order);
+
+    try {
+    const linePayBody = createLinePayBody(order);
+
+    const uri = '/payments/request';
+    const headers = createSignature(uri, linePayBody);
+
+    const url = ``;
+    const linePayRes = await axios.post(url, linePayBody, {headers });
+    // console.log(headers);
+    // console.log(linePayRes.data.info);
+    // console.log({linePayBody})
+    // console.log(JSON.stringify(linePayBody, null, 4))
+    // console.log(linePayRes);
+
+    if(linePayRes?.data?.returnCode === '0000') {
+        res.json({
+            success: true,
+            url: linePayRes?.data?.info.paymentUrl.web
+        });
+    } else {
+        res.json({
+            success: false,
+            message: '訂單不存在',
+        });
+    }
+
+    }
+    catch(error) {
+        console.log(error.message);
+    }
+
+})
 // CartDone - 訂單成功頁面帶出該筆訂單記錄
 // 歷史訂單+付款方式
 router.get('/payment-done/:mbsid', async (req, res) => {
