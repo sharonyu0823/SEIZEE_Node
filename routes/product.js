@@ -25,7 +25,7 @@ router.get("/list", async (req, res) => {
   if (whereCondition != "") whereCondition = " WHERE " + whereCondition;
   // console.log(whereCondition);
   let product_sql =
-    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `shop_city`, `shop_area`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
+    " SELECT `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_phone`, `shop_address_detail`, `shop_city`, `shop_area`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, ROUND(AVG(rating)*2)/2 AS rating, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end AS inventory_qty, food_product.`product_name`, food_product.`product_name` " +
     "FROM food_product " +
     "LEFT JOIN `shop_list` on `shop_list`.sid = shop_list_sid " +
     "LEFT JOIN `shop_address_area` on	`shop_address_area_sid` = `shop_address_area`.sid " +
@@ -37,7 +37,7 @@ router.get("/list", async (req, res) => {
     "FROM `product_inventory` group by food_product_sid ) t2 on t2.`food_product_sid` = `food_product`.`sid` " +
     "LEFT JOIN `product_comment` on product_comment.food_product_sid=`food_product`.`sid` " +
     whereCondition +
-    " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
+    " GROUP BY `food_product`.sid, `product_description`, `unit_price`, `product_price`, `sale_price`, `shop_list_sid`, `shop_name`, `shop_deadline`,`shop_phone`, `shop_address_detail`, `picture_url`, `product_category_sid`, `category_name`, `category_icon`, case when total_inventory_qty is null then 0 else total_inventory_qty end - case when total_order_quantity is null then 0 else total_order_quantity end " +
     " ORDER BY `product_category_sid`, `food_product`.`sid` ";
   // console.log(product_sql);
   // return product_sql;
@@ -167,10 +167,15 @@ router.post("/comment", upload.none(), async (req, res) => {
 // 抓評分數和留言
 router.get("/userComment/:sid", async (req, res) => {
   const food_product_sid = req.params.sid;
+  // const sql =
+  //   "SELECT c.* ,ROUND(AVG(rating),1) AS newRating, FROM `product_comment` WHERE c.food_product_sid = ? ";
   const sql =
-    "SELECT c.* ,ROUND(AVG(rating)*2)/2 AS rating, m.`mb_photo`, m.`mb_name` FROM `product_comment` c JOIN `member` m ON c.`mb_sid`=m.mb_sid WHERE c.food_product_sid = ? ";
+    "SELECT c.* ,ROUND(AVG(rating),1) AS newRating FROM `product_comment` c JOIN `member` m ON c.`mb_sid` = m.mb_sid WHERE c.food_product_sid = ? ";
+    const sql2 =
+    "SELECT * FROM `product_comment` WHERE food_product_sid = ? ";
   const [rows] = await db.query(sql, [food_product_sid])
-  res.json(rows);
+  const [rows2] =await db.query(sql2, [food_product_sid])
+  res.json({rows,rows2});
 });
 
 //商品篩選
