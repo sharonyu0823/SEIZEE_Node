@@ -170,9 +170,9 @@ router.get("/userComment/:sid", async (req, res) => {
   // const sql =
   //   "SELECT c.* ,ROUND(AVG(rating),1) AS newRating, FROM `product_comment` WHERE c.food_product_sid = ? ";
   const sql =
-    "SELECT c.* ,ROUND(AVG(rating),1) AS newRating FROM `product_comment` c JOIN `member` m ON c.`mb_sid` = m.mb_sid WHERE c.food_product_sid = ? ";
+    "SELECT m.mb_photo, m.mb_name, c.* ,ROUND(AVG(rating),1) AS newRating FROM `product_comment` c JOIN `member` m ON c.`mb_sid` = m.mb_sid WHERE c.food_product_sid = ? ";
     const sql2 =
-    "SELECT * FROM `product_comment` WHERE food_product_sid = ? ";
+    "SELECT m.mb_photo, m.mb_name, c.* FROM `product_comment` c JOIN `member` m ON c.`mb_sid` = m.mb_sid WHERE  c.food_product_sid = ? ";
   const [rows] = await db.query(sql, [food_product_sid])
   const [rows2] =await db.query(sql2, [food_product_sid])
   res.json({rows,rows2});
